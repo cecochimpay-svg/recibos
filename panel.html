@@ -2,16 +2,20 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co;" />
   <title>Mis Recibos de Sueldo · CECO S.A.</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ACA ES LO NUEVO: Librería PDF-Lib para estampar la firma dentro del documento -->
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 
   <style>
     :root {
-      --color-bg: #F3F5F1;
+      --color-bg: #F4F6F3;
       --color-surface: #FFFFFF;
       --color-plant: #1E6B4C;
       --color-plant-dark: #123F2C;
@@ -28,16 +32,16 @@
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
-      height: 100%;
+      min-height: 100%;
       font-family: var(--font-family);
       background: var(--color-bg);
       color: var(--color-text);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #DAD4C8; border-radius: 20px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--color-plant); }
@@ -46,26 +50,26 @@
     .topbar {
       background: #FFFFFF;
       border-bottom: 1.5px solid var(--color-border);
-      padding: 12px 34px;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       position: sticky;
       top: 0;
       z-index: 50;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
 
     .user-info-header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      min-width: 0;
     }
 
     .user-avatar {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: var(--color-plant);
       color: #FFFFFF;
@@ -74,44 +78,54 @@
       justify-content: center;
       font-weight: 800;
       font-size: 15px;
+      flex-shrink: 0;
       box-shadow: 0 3px 8px rgba(30, 107, 76, 0.25);
+    }
+
+    .user-texts {
+      min-width: 0;
     }
 
     .user-name {
       font-family: 'Montserrat', sans-serif;
-      font-size: 15.5px;
+      font-size: 14px;
       font-weight: 800;
       color: var(--color-plant-dark);
       line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
     }
 
     .user-sub {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--color-text-secondary);
       font-weight: 600;
       margin-top: 2px;
+      white-space: nowrap;
     }
 
     .btn-logout {
       background: #F8FAFC;
       border: 1.2px solid var(--color-border);
       color: var(--color-text-secondary);
-      padding: 8px 16px;
+      padding: 7px 12px;
       border-radius: var(--radius-md);
       font-weight: 700;
-      font-size: 12px;
+      font-size: 11.5px;
       cursor: pointer;
-      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
     }
 
     .btn-logout:hover {
       background: #FEE2E2;
       border-color: #FCA5A5;
       color: #991B1B;
-      transform: translateY(-1px);
     }
 
     button:active, .card-anio:active, .btn-action:active {
@@ -119,32 +133,31 @@
       border-color: #FBC02D !important;
       color: #D97706 !important;
       box-shadow: inset 0 3px 8px rgba(251, 192, 45, 0.25) !important;
-      transform: scale(0.98);
+      transform: scale(0.97);
     }
 
-    /* Layout Split Container */
+    /* Layout Responsive */
     .layout-panel {
       display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 20px;
-      padding: 24px 34px;
+      grid-template-columns: 260px 1fr;
+      gap: 18px;
+      padding: 20px;
       flex: 1;
-      overflow: hidden;
-      max-width: 1440px;
+      max-width: 1300px;
       margin: 0 auto;
       width: 100%;
     }
 
-    /* Panel Izquierdo: Cards Suaves de Años */
+    /* Sidebar Izquierda (Años) */
     .sidebar-anios {
       background: var(--color-surface);
       border: 1.5px solid var(--color-border);
       border-radius: var(--radius-lg);
-      padding: 18px 16px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       box-shadow: 0 2px 8px rgba(20, 30, 24, 0.03);
-      overflow: hidden;
+      height: fit-content;
     }
 
     .sidebar-title {
@@ -154,8 +167,7 @@
       color: var(--color-text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      margin-bottom: 12px;
-      padding: 0 4px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -165,18 +177,15 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      overflow-y: auto;
-      padding-right: 4px;
-      flex: 1;
     }
 
     .card-anio {
       background: #F8FAFC;
       border: 1.5px solid var(--color-border);
       border-radius: var(--radius-md);
-      padding: 12px 14px;
+      padding: 10px 14px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -185,8 +194,7 @@
     .card-anio:hover {
       background: #FFFFFF;
       border-color: var(--color-plant);
-      transform: translateX(3px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      transform: translateX(2px);
     }
 
     .card-anio.active {
@@ -197,7 +205,7 @@
 
     .card-anio-titulo {
       font-family: 'Montserrat', sans-serif;
-      font-size: 14.5px;
+      font-size: 13.5px;
       font-weight: 800;
       color: var(--color-plant-dark);
       display: flex;
@@ -210,9 +218,9 @@
       color: #FFFFFF;
       font-size: 11px;
       font-weight: 800;
-      padding: 3px 9px;
-      border-radius: 12px;
-      min-width: 26px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      min-width: 24px;
       text-align: center;
     }
 
@@ -220,16 +228,15 @@
       background: var(--color-plant-dark);
     }
 
-    /* Panel Derecho: Lista Grande de Recibos */
+    /* Panel Contenedor de Recibos */
     .content-recibos {
       background: var(--color-surface);
       border: 1.5px solid var(--color-border);
       border-radius: var(--radius-lg);
-      padding: 22px 26px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       box-shadow: 0 2px 8px rgba(20, 30, 24, 0.03);
-      overflow: hidden;
     }
 
     .header-content {
@@ -238,86 +245,83 @@
       align-items: center;
       margin-bottom: 16px;
       border-bottom: 1.5px solid var(--color-border);
-      padding-bottom: 14px;
-      flex-shrink: 0;
+      padding-bottom: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .header-titulo {
       font-family: 'Montserrat', sans-serif;
-      font-size: 18px;
+      font-size: 16.5px;
       font-weight: 800;
       color: var(--color-plant-dark);
       margin: 0;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .tabla-scroll-box {
-      flex: 1;
-      overflow-y: auto;
-      border: 1.2px solid var(--color-border);
-      border-radius: var(--radius-md);
+    /* Lista de Recibos en Formato Cards Suaves */
+    .lista-recibos-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .recibo-card-item {
       background: #FFFFFF;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
 
-    /* Tabla de Recibos */
-    table.tabla-recibos {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13.5px;
+    .recibo-card-item:hover {
+      border-color: var(--color-plant);
+      box-shadow: 0 4px 12px rgba(30, 107, 76, 0.08);
+      transform: translateY(-1px);
     }
 
-    table.tabla-recibos th {
-      position: sticky;
-      top: 0;
-      background: #475569;
-      color: #FFFFFF;
+    .recibo-datos-izq {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .recibo-mes-nombre {
       font-family: 'Montserrat', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 13px 18px;
-      text-align: left;
-      z-index: 10;
-      border-bottom: 2px solid var(--color-border);
-    }
-
-    table.tabla-recibos td {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--color-border);
-      color: var(--color-text);
-      vertical-align: middle;
-    }
-
-    table.tabla-recibos tbody tr:hover td {
-      background: var(--color-plant-soft);
-    }
-
-    .badge-legajo-table {
-      background: #F1F5F9;
-      color: var(--color-plant-dark);
+      font-size: 15px;
       font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--color-border);
-      font-size: 12.5px;
-      display: inline-block;
-    }
-
-    .periodo-mes-principal {
-      font-weight: 800;
-      font-size: 14px;
       color: var(--color-plant-dark);
       text-transform: capitalize;
     }
 
-    .periodo-codigo-sub {
-      font-size: 11px;
+    .recibo-meta-flex {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 11.5px;
+    }
+
+    .badge-legajo {
+      background: #F1F5F9;
+      color: var(--color-text);
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--color-border);
+    }
+
+    .badge-periodo-sub {
       color: var(--color-text-secondary);
       font-weight: 600;
-      margin-top: 2px;
     }
 
     /* Badges de Firma */
@@ -325,46 +329,47 @@
       background: #DEF7EC;
       color: #03543F;
       border: 1px solid #BCF0DA;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
 
     .badge-pendiente {
       background: #FEF3C7;
       color: #92400E;
       border: 1px solid #FDE68A;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
 
     /* Botones de Acción */
-    .acciones-flex {
+    .recibo-acciones-der {
       display: flex;
       gap: 8px;
-      justify-content: flex-end;
+      flex-shrink: 0;
     }
 
     .btn-action {
-      padding: 7px 14px;
+      padding: 8px 14px;
       border-radius: var(--radius-sm);
-      font-size: 11.5px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 800;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       transition: all 0.15s ease;
       text-decoration: none;
+      border: none;
     }
 
     .btn-ver {
@@ -375,34 +380,31 @@
     .btn-ver:hover {
       background: #E2E8F0;
       border-color: #CBD5E1;
-      transform: translateY(-1px);
     }
 
     .btn-descargar {
       background: var(--color-plant);
-      border: 1px solid var(--color-plant);
       color: #FFFFFF;
       box-shadow: 0 2px 6px rgba(30, 107, 76, 0.2);
     }
     .btn-descargar:hover {
       background: var(--color-plant-dark);
-      transform: translateY(-1px);
     }
 
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
+      padding: 45px 20px;
       color: var(--color-text-secondary);
       font-weight: 600;
-      font-size: 13.5px;
+      font-size: 13px;
     }
 
-    /* Modal de Firma en Pantalla */
+    /* Modal de Firma Digital */
     .modal-overlay-firma {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.55);
-      backdrop-filter: blur(6px);
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(5px);
       display: none;
       align-items: center;
       justify-content: center;
@@ -414,30 +416,30 @@
       background: #FFFFFF;
       border-radius: 20px;
       width: 100%;
-      max-width: 480px;
-      padding: 24px;
+      max-width: 440px;
+      padding: 22px;
       border: 1.5px solid var(--color-border);
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       animation: entrar 0.2s ease forwards;
     }
 
     @keyframes entrar {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .canvas-contenedor {
+    .canvas-box {
       border: 1.5px dashed var(--color-plant);
       border-radius: 12px;
-      background: #FAFAF8;
+      background: #FAFBF9;
       position: relative;
       touch-action: none;
-      overflow: hidden;
+      user-select: none;
       width: 100%;
-      height: 180px;
+      height: 190px;
     }
 
     #canvasFirma {
@@ -450,8 +452,8 @@
     .linea-guia-firma {
       position: absolute;
       bottom: 25px;
-      left: 30px;
-      right: 30px;
+      left: 20px;
+      right: 20px;
       border-bottom: 1px dashed #CBD5E1;
       pointer-events: none;
       text-align: center;
@@ -460,16 +462,57 @@
       color: #94A3B8;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding-bottom: 4px;
+      padding-bottom: 3px;
     }
 
-    @media (max-width: 860px) {
+    /* Adaptación para pantallas pequeñas (Celulares) */
+    @media (max-width: 768px) {
       .layout-panel {
         grid-template-columns: 1fr;
-        overflow-y: auto;
+        padding: 14px;
+        gap: 14px;
       }
+
+      .topbar {
+        padding: 10px 14px;
+      }
+
+      .user-name {
+        max-width: 170px;
+      }
+
       .sidebar-anios {
-        max-height: 220px;
+        padding: 12px;
+      }
+
+      .cards-anios-container {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .card-anio {
+        flex-shrink: 0;
+        padding: 7px 12px;
+        gap: 8px;
+      }
+
+      .recibo-card-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .recibo-acciones-der {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .btn-action {
+        justify-content: center;
+        padding: 9px;
       }
     }
   </style>
@@ -480,16 +523,16 @@
   <header class="topbar">
     <div class="user-info-header">
       <div class="user-avatar" id="avatarLetra">O</div>
-      <div>
+      <div class="user-texts">
         <div class="user-name" id="lblEmpleado">Cargando operario...</div>
         <div class="user-sub">
-          DNI: <b id="lblDni">—</b> | Legajo: <b id="lblLegajo">—</b>
+          DNI: <b id="lblDni">—</b> · Legajo: <b id="lblLegajo">—</b>
         </div>
       </div>
     </div>
 
     <button class="btn-logout" onclick="cerrarSesion()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
       Cerrar Sesión
     </button>
   </header>
@@ -497,7 +540,7 @@
   <!-- Layout Principal -->
   <div class="layout-panel">
 
-    <!-- Panel Izquierdo: Cards Suaves de Años -->
+    <!-- Selector de Años -->
     <aside class="sidebar-anios">
       <div class="sidebar-title">
         <span>Años Disponibles</span>
@@ -505,72 +548,59 @@
       </div>
 
       <div class="cards-anios-container" id="contenedorCardsAnios">
-        <div style="font-size: 12px; color: var(--color-text-secondary); padding: 10px;">Cargando años...</div>
+        <div style="font-size: 12px; color: var(--color-text-secondary); padding: 6px;">Cargando...</div>
       </div>
     </aside>
 
-    <!-- Panel Derecho: Lista Grande de Recibos -->
+    <!-- Lista de Recibos -->
     <main class="content-recibos">
       <div class="header-content">
         <h2 class="header-titulo" id="lblTituloEjercicio">
           📁 Recibos de Sueldo
         </h2>
         <span id="lblContadorFiltrados" style="font-size: 12px; font-weight: 700; color: var(--color-text-secondary);">
-          0 recibos
+          0 recibos encontrados
         </span>
       </div>
 
-      <div class="tabla-scroll-box">
-        <table class="tabla-recibos">
-          <thead>
-            <tr>
-              <th style="width: 20%;">LEGAJO</th>
-              <th style="width: 45%;">PERÍODO</th>
-              <th style="width: 35%; text-align: right;">ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyRecibos">
-            <tr>
-              <td colspan="3" class="empty-state">Seleccioná un año para ver tus recibos.</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="lista-recibos-container" id="contenedorRecibosLista">
+        <div class="empty-state">Seleccioná un año para ver tus recibos.</div>
       </div>
     </main>
 
   </div>
 
-  <!-- Modal de Firma en Pantalla -->
+  <!-- Modal de Firma Digital en Pantalla -->
   <div class="modal-overlay-firma" id="modalFirma">
     <div class="modal-firma-card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <h3 style="margin:0; font-family:'Montserrat'; font-size:16px; font-weight:800; color:var(--color-plant-dark);">
+          <h3 style="margin:0; font-family:'Montserrat'; font-size:15px; font-weight:800; color:var(--color-plant-dark);">
             ✍️ Firma de Conformidad
           </h3>
-          <span id="lblSubtituloFirma" style="font-size:12px; color:var(--color-text-secondary);">
+          <span id="lblSubtituloFirma" style="font-size:11.5px; color:var(--color-text-secondary); font-weight:600;">
             Recibo de haberes
           </span>
         </div>
         <button onclick="cerrarModalFirma()" style="background:#F1F5F9; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-weight:800; color:#64748B;">✕</button>
       </div>
 
-      <div class="canvas-contenedor" id="canvasBox">
+      <div class="canvas-box" id="canvasBox">
         <canvas id="canvasFirma"></canvas>
-        <div class="linea-guia-firma" id="lblGuiaFirma">Firmar aquí con el dedo o mouse</div>
+        <div class="linea-guia-firma" id="lblGuiaFirma">Firmá aquí con tu dedo o mouse</div>
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
-        <button type="button" class="btn-action btn-ver" style="font-size:11px; padding:6px 12px;" onclick="limpiarCanvas()">
+        <button type="button" class="btn-action btn-ver" style="font-size:11px; padding:7px 12px;" onclick="limpiarCanvas()">
           🔄 Limpiar
         </button>
 
         <div style="display:flex; gap:8px;">
-          <button type="button" class="btn-action btn-ver" style="font-size:11px; padding:6px 14px;" onclick="cerrarModalFirma()">
+          <button type="button" class="btn-action btn-ver" style="font-size:11px; padding:7px 14px;" onclick="cerrarModalFirma()">
             Cancelar
           </button>
-          <button type="button" class="btn-action btn-descargar" id="btnConfirmarFirma" style="font-size:11px; padding:6px 18px;" onclick="procesarFirmaYAccion()">
-            Confirmar y Continuar
+          <button type="button" class="btn-action btn-descargar" id="btnConfirmarFirma" style="font-size:11px; padding:7px 18px;" onclick="procesarFirmaYAccion()">
+            Confirmar y Ver
           </button>
         </div>
       </div>
@@ -588,7 +618,7 @@
     let anioSeleccionado = '';
     let operacionPendiente = null;
 
-    // Variables del Canvas
+    // Variables Canvas
     let canvas = null;
     let ctx = null;
     let dibujando = false;
@@ -602,23 +632,23 @@
     document.addEventListener('DOMContentLoaded', () => {
       const sesionStorage = localStorage.getItem('operario_sesion');
       if (!sesionStorage) {
-        window.location.href = 'loguer.html';
+        window.location.href = 'index.html';
         return;
       }
 
       sesionActual = JSON.parse(sesionStorage);
 
-      // Header del Operario
+      // Cabecera
       document.getElementById('lblEmpleado').innerText = sesionActual.empleado || 'Operario';
       document.getElementById('lblDni').innerText = sesionActual.dni;
       document.getElementById('lblLegajo').innerText = `#${sesionActual.legajo || '—'}`;
       document.getElementById('avatarLetra').innerText = (sesionActual.empleado ? sesionActual.empleado[0] : 'O').toUpperCase();
 
-      inicializarEventosCanvas();
+      inicializarCanvas();
       cargarRecibosOperario();
     });
 
-    // 1. Obtener recibos desde Supabase
+    // 1. Cargar Recibos
     async function cargarRecibosOperario() {
       try {
         const { data, error } = await supabaseClient
@@ -632,8 +662,8 @@
         todosLosRecibos = data || [];
 
         if (todosLosRecibos.length === 0) {
-          document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:10px;">Sin años registrados.</div>';
-          document.getElementById('tbodyRecibos').innerHTML = '<tr><td colspan="3" class="empty-state">No se encontraron recibos emitidos para este DNI.</td></tr>';
+          document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:6px;">Sin ejercicios.</div>';
+          document.getElementById('contenedorRecibosLista').innerHTML = '<div class="empty-state">No se encontraron recibos emitidos para este DNI.</div>';
           return;
         }
 
@@ -641,11 +671,47 @@
 
       } catch (err) {
         console.error("Error cargando recibos:", err);
-        document.getElementById('tbodyRecibos').innerHTML = `<tr><td colspan="3" class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</td></tr>`;
+        document.getElementById('contenedorRecibosLista').innerHTML = `<div class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</div>`;
       }
     }
 
-    // 2. Renderizar años
+    // ESTO LO MODIFIQUE: Coordenadas milimétricas según el formato de recibo de CECO S.A.
+async function estamparFirmaEnPdf(pdfBlobOriginal, pngBlobFirma, periodo = '') {
+  const pdfBytes = await pdfBlobOriginal.arrayBuffer();
+  const pngBytes = await pngBlobFirma.arrayBuffer();
+
+  const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+  const firmaImg = await pdfDoc.embedPng(pngBytes);
+  const paginas = pdfDoc.getPages();
+  const primeraPagina = paginas[0];
+
+  const { width, height } = primeraPagina.getSize();
+
+  // Tamaño proporcional del trazo de la firma
+  const firmaWidth = width * 0.115;   // ~96 pt de ancho
+  const firmaHeight = height * 0.048; // ~28 pt de alto
+
+  // Detección automática del diseño de recibo:
+  // - 2026-08 en adelante: formato con gráfico y cuadro patronal abajo.
+  // - 2026-07 hacia atrás: formato histórico con conceptos hasta el pie.
+  const esNuevoFormato = periodo && periodo >= '2026-08';
+
+  const xPos = width * 0.315; // Centrado horizontal en el casillero "FIRMA DEL EMPLEADO"
+  const yPos = esNuevoFormato
+    ? height * 0.252          // Nuevo (2026-08+): justo sobre la leyenda y encima del bloque patronal
+    : height * 0.082;         // Histórico (<= 2026-07): al pie de la hoja
+
+  primeraPagina.drawImage(firmaImg, {
+    x: xPos,
+    y: yPos,
+    width: firmaWidth,
+    height: firmaHeight,
+  });
+
+  return await pdfDoc.save();
+}
+
+    // 2. Renderizar lista de Años
     function renderizarCardsAnios() {
       const contenedor = document.getElementById('contenedorCardsAnios');
       const conteoPorAnio = {};
@@ -684,24 +750,23 @@
         `;
       }).join('');
 
-      renderizarTablaRecibos();
+      renderizarListaRecibos();
     }
 
-    // 3. Seleccionar Año
     function seleccionarAnio(anio, elCard) {
       anioSeleccionado = anio;
       document.querySelectorAll('.card-anio').forEach(c => c.classList.remove('active'));
       if (elCard) elCard.classList.add('active');
-      renderizarTablaRecibos();
+      renderizarListaRecibos();
     }
 
-    // 4. Renderizar Tabla con verificación de firma
-    function renderizarTablaRecibos() {
-      const tbody = document.getElementById('tbodyRecibos');
+    // 3. Renderizar Recibos como Cards Suaves
+    function renderizarListaRecibos() {
+      const container = document.getElementById('contenedorRecibosLista');
       const lblTitulo = document.getElementById('lblTituloEjercicio');
       const lblContador = document.getElementById('lblContadorFiltrados');
 
-      lblTitulo.innerHTML = `📁 Recibos de Sueldo · <b>Año ${anioSeleccionado}</b>`;
+      lblTitulo.innerHTML = `📁 Recibos · <b>Año ${anioSeleccionado}</b>`;
 
       const filtrados = todosLosRecibos.filter(r => {
         if (anioSeleccionado === 'Otros') {
@@ -713,11 +778,11 @@
       lblContador.innerText = `${filtrados.length} recibos encontrados`;
 
       if (filtrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</td></tr>`;
+        container.innerHTML = `<div class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</div>`;
         return;
       }
 
-      tbody.innerHTML = filtrados.map(r => {
+      container.innerHTML = filtrados.map(r => {
         let nombrePeriodo = r.periodo;
         if (r.periodo && r.periodo.includes('-')) {
           const [anio, mesNum] = r.periodo.split('-');
@@ -735,47 +800,47 @@
           : `<span class="badge-pendiente">⏳ Pendiente firma</span>`;
 
         return `
-          <tr>
-            <td>
-              <span class="badge-legajo-table">#${legajoMostrar}</span>
-            </td>
-            <td>
-              <div class="periodo-mes-principal">${nombrePeriodo}</div>
-              <div class="periodo-codigo-sub" style="display:flex; align-items:center; gap:8px;">
-                <span>Período: ${r.periodo}</span>
+          <div class="recibo-card-item">
+            <div class="recibo-datos-izq">
+              <div class="recibo-mes-nombre">${nombrePeriodo}</div>
+              <div class="recibo-meta-flex">
+                <span class="badge-legajo">Legajo #${legajoMostrar}</span>
+                <span class="badge-periodo-sub">Período: ${r.periodo}</span>
                 ${badgeFirma}
               </div>
-            </td>
-            <td>
-              <div class="acciones-flex">
-                <button class="btn-action btn-ver" onclick="solicitarFirmaOEjecutar('ver', '${r.id}', '${r.pdf_path}', '${r.periodo}', ${estaFirmado})">
-                  👁️ Ver
-                </button>
-                <button class="btn-action btn-descargar" onclick="solicitarFirmaOEjecutar('descargar', '${r.id}', '${r.pdf_path}', '${r.periodo}', ${estaFirmado})">
-                  ⬇️ Descargar
-                </button>
-              </div>
-            </td>
-          </tr>
+            </div>
+
+            <div class="recibo-acciones-der">
+              <button class="btn-action btn-ver" onclick="solicitarFirmaOEjecutar('ver', '${r.id}', '${r.pdf_path}', '${r.periodo}', ${estaFirmado})">
+                👁️ Ver
+              </button>
+              <button class="btn-action btn-descargar" onclick="solicitarFirmaOEjecutar('descargar', '${r.id}', '${r.pdf_path}', '${r.periodo}', ${estaFirmado})">
+                ⬇️ Descargar
+              </button>
+            </div>
+          </div>
         `;
       }).join('');
     }
 
-    // 5. Interceptador de Firma
+    // 4. Interceptor de Firma
     function solicitarFirmaOEjecutar(tipo, reciboId, pdfPath, periodo, firmado) {
       operacionPendiente = { tipo, reciboId, pdfPath, periodo, firmado };
 
+      // Si ya está firmado, ejecuta directamente la acción sin pedir firma
       if (firmado) {
         ejecutarAccionFinal();
         return;
       }
 
+      // Si no está firmado, abre el modal de firma
       document.getElementById('lblSubtituloFirma').innerText = `Período: ${periodo} · Legajo: #${sesionActual.legajo || '—'}`;
+      document.getElementById('btnConfirmarFirma').innerText = tipo === 'ver' ? "Confirmar y Ver" : "Confirmar y Descargar";
       abrirModalFirma();
     }
 
-    // 6. Configuración y Eventos del Canvas
-    function inicializarEventosCanvas() {
+    // 5. Canvas Táctil y Mouse
+    function inicializarCanvas() {
       canvas = document.getElementById('canvasFirma');
       ctx = canvas.getContext('2d');
 
@@ -784,19 +849,18 @@
       canvas.addEventListener('mousemove', (e) => moverTrazo(e.clientX, e.clientY));
       window.addEventListener('mouseup', detenerTrazo);
 
-      // Touch (pantallas táctiles / celulares)
+      // Touch (Celulares) con preventDefault para evitar que la pantalla haga scroll al firmar
       canvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
-          const t = e.touches[0];
-          iniciarTrazo(t.clientX, t.clientY);
+          e.preventDefault();
+          iniciarTrazo(e.touches[0].clientX, e.touches[0].clientY);
         }
       }, { passive: false });
 
       canvas.addEventListener('touchmove', (e) => {
         if (e.touches.length === 1) {
           e.preventDefault();
-          const t = e.touches[0];
-          moverTrazo(t.clientX, t.clientY);
+          moverTrazo(e.touches[0].clientX, e.touches[0].clientY);
         }
       }, { passive: false });
 
@@ -804,9 +868,14 @@
     }
 
     function ajustarDimensionesCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const box = document.getElementById('canvasBox');
+      const rect = box.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      ctx.scale(dpr, dpr);
       ctx.strokeStyle = '#0F172A';
       ctx.lineWidth = 2.6;
       ctx.lineCap = 'round';
@@ -824,7 +893,7 @@
     function iniciarTrazo(x, y) {
       dibujando = true;
       trazoRealizado = true;
-      document.getElementById('lblGuiaFirma').style.opacity = '0.3';
+      document.getElementById('lblGuiaFirma').style.opacity = '0.2';
       const p = obtenerCoords(x, y);
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
@@ -845,8 +914,9 @@
     }
 
     function limpiarCanvas() {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const box = document.getElementById('canvasBox');
+      const rect = box.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
       trazoRealizado = false;
       document.getElementById('lblGuiaFirma').style.opacity = '1';
     }
@@ -864,64 +934,83 @@
       operacionPendiente = null;
     }
 
-    // 7. Procesar firma digital y subir a Storage
-    async function procesarFirmaYAccion() {
-      if (!trazoRealizado) {
-        return alert("Por favor realizá tu firma en el recuadro antes de continuar.");
-      }
+    // 6. Subir Firma a Supabase Storage y Actualizar BD
+    // ESTO LO MODIFIQUE: Ahora procesa el PDF, estampa la firma y actualiza el archivo en la nube
+async function procesarFirmaYAccion() {
+  if (!trazoRealizado) {
+    return alert("Por favor realizá tu firma en el recuadro antes de continuar.");
+  }
 
-      const btn = document.getElementById('btnConfirmarFirma');
-      btn.disabled = true;
-      btn.innerText = "Registrando...";
+  const btn = document.getElementById('btnConfirmarFirma');
+  btn.disabled = true;
+  btn.innerText = "Estampando firma...";
 
-      try {
-        const { reciboId, periodo } = operacionPendiente;
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  try {
+    const { reciboId, periodo, pdfPath } = operacionPendiente;
 
-        // Guardar PNG en Storage
-        const firmaStoragePath = `${periodo}/firmas/${sesionActual.dni}_${periodo}.png`;
+    // 1. Obtener la firma del canvas en formato PNG
+    const blobFirmaPng = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 
-        const { error: errStorage } = await supabaseClient.storage
-          .from('recibos')
-          .upload(firmaStoragePath, blob, {
-            contentType: 'image/png',
-            upsert: true
-          });
+    // 2. Descargar el archivo PDF original desde Supabase Storage
+    const { data: pdfOriginalBlob, error: errDescargaPdf } = await supabaseClient.storage
+      .from('recibos')
+      .download(pdfPath);
 
-        if (errStorage) throw errStorage;
+    if (errDescargaPdf) throw new Error("No se pudo obtener el PDF original: " + errDescargaPdf.message);
 
-        // Actualizar tabla public.recibos
-        const { error: errDb } = await supabaseClient
-          .from('recibos')
-          .update({
-            firmado: true,
-            fecha_firma: new Date().toISOString(),
-            firma_path: firmaStoragePath
-          })
-          .eq('id', reciboId);
+    // 3. Estampar la firma en el documento PDF
+    const pdfBytesFirmado = await estamparFirmaEnPdf(pdfOriginalBlob, blobFirmaPng);
+    const pdfBlobFirmado = new Blob([pdfBytesFirmado], { type: 'application/pdf' });
 
-        if (errDb) throw errDb;
+    // 4. Subir la imagen de la firma de respaldo (PNG)
+    const firmaStoragePath = `${periodo}/firmas/${sesionActual.dni}_${periodo}.png`;
+    await supabaseClient.storage
+      .from('recibos')
+      .upload(firmaStoragePath, blobFirmaPng, { contentType: 'image/png', upsert: true });
 
-        // Sincronizar memoria local
-        const rLocal = todosLosRecibos.find(r => String(r.id) === String(reciboId));
-        if (rLocal) {
-          rLocal.firmado = true;
-          rLocal.fecha_firma = new Date().toISOString();
-        }
+    // 5. Sobrescribir el PDF en Supabase Storage con la versión ya firmada
+    const { error: errUploadPdf } = await supabaseClient.storage
+      .from('recibos')
+      .upload(pdfPath, pdfBlobFirmado, {
+        contentType: 'application/pdf',
+        upsert: true // Reemplaza el archivo anterior con el firmado
+      });
 
-        renderizarTablaRecibos();
-        document.getElementById('modalFirma').style.display = 'none';
+    if (errUploadPdf) throw errUploadPdf;
 
-        ejecutarAccionFinal();
+    // 6. Actualizar registro en la tabla public.recibos
+    const { error: errDb } = await supabaseClient
+      .from('recibos')
+      .update({
+        firmado: true,
+        fecha_firma: new Date().toISOString(),
+        firma_path: firmaStoragePath
+      })
+      .eq('id', reciboId);
 
-      } catch (err) {
-        console.error("Error al registrar firma:", err);
-        alert("Error al registrar la firma: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Confirmar y Continuar";
-      }
+    if (errDb) throw errDb;
+
+    // 7. Sincronizar memoria y refrescar interfaz
+    const rLocal = todosLosRecibos.find(r => String(r.id) === String(reciboId));
+    if (rLocal) {
+      rLocal.firmado = true;
+      rLocal.fecha_firma = new Date().toISOString();
     }
+
+    renderizarListaRecibos();
+    document.getElementById('modalFirma').style.display = 'none';
+
+    // 8. Abrir o descargar automáticamente el PDF firmado
+    ejecutarAccionFinal();
+
+  } catch (err) {
+    console.error("Error al procesar la firma en el PDF:", err);
+    alert("Ocurrió un error al firmar el recibo: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "Confirmar y Continuar";
+  }
+}
 
     function ejecutarAccionFinal() {
       if (!operacionPendiente) return;
@@ -935,7 +1024,7 @@
       operacionPendiente = null;
     }
 
-    // 8. Previsualizar archivo PDF
+    // 7. Visualizar PDF
     async function verRecibo(pdfPath) {
       try {
         const { data, error } = await supabaseClient.storage
@@ -951,7 +1040,7 @@
       }
     }
 
-    // 9. Descargar PDF
+    // 8. Descargar PDF
     async function descargarRecibo(pdfPath, periodo) {
       try {
         const { data, error } = await supabaseClient.storage
@@ -976,7 +1065,7 @@
 
     function cerrarSesion() {
       localStorage.removeItem('operario_sesion');
-      window.location.href = 'loguer.html';
+      window.location.href = 'index.html';
     }
   </script>
 </body>

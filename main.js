@@ -15,7 +15,7 @@ function createWindow() {
     }
   });
 
-  win.loadFile('loguer.html');
+  win.loadFile('index.html');
 }
 
 app.whenReady().then(createWindow);
