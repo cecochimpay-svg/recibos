@@ -448,219 +448,219 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://zsgqlmfzidazdtpgmuna.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzZ3FsbWZ6aWRhemR0cGdtdW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTY3NDIsImV4cCI6MjA5Nzc5Mjc0Mn0.Y9dDHLdQGIOcVS3JaYnbUHWlwul4uiEkkb7udeoF-b0';
+  const SUPABASE_URL = 'https://zsgqlmfzidazdtpgmuna.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzZ3FsbWZ6aWRhemR0cGdtdW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTY3NDIsImV4cCI6MjA5Nzc5Mjc0Mn0.Y9dDHLdQGIOcVS3JaYnbUHWlwul4uiEkkb7udeoF-b0';
 
-    // ESTO LO MODIFIQUE: supabaseClient unificado para evitar conflictos de nombres
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let sesionActual = null;
-    let todosLosRecibos = [];
-    let anioSeleccionado = '';
+  let sesionActual = null;
+  let todosLosRecibos = [];
+  let anioSeleccionado = '';
 
-    const NOMBRES_MESES = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
+  const NOMBRES_MESES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const sesionStorage = localStorage.getItem('operario_sesion');
-      if (!sesionStorage) {
-        window.location.href = 'loguer.html';
+  document.addEventListener('DOMContentLoaded', () => {
+    const sesionStorage = localStorage.getItem('operario_sesion');
+    
+    // Corregido a index.html
+    if (!sesionStorage) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    sesionActual = JSON.parse(sesionStorage);
+
+    // Header del Operario
+    document.getElementById('lblEmpleado').innerText = sesionActual.empleado || 'Operario';
+    document.getElementById('lblDni').innerText = sesionActual.dni;
+    document.getElementById('lblLegajo').innerText = `#${sesionActual.legajo || '—'}`;
+    document.getElementById('avatarLetra').innerText = (sesionActual.empleado ? sesionActual.empleado[0] : 'O').toUpperCase();
+
+    cargarRecibosOperario();
+  });
+
+  // 1. Obtener recibos desde Supabase
+  async function cargarRecibosOperario() {
+    try {
+      const { data, error } = await supabaseClient
+        .from('recibos')
+        .select('*')
+        .eq('dni', parseInt(sesionActual.dni, 10))
+        .order('periodo', { ascending: false });
+
+      if (error) throw error;
+
+      todosLosRecibos = data || [];
+
+      if (todosLosRecibos.length === 0) {
+        document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:10px;">Sin años registrados.</div>';
+        document.getElementById('tbodyRecibos').innerHTML = '<tr><td colspan="3" class="empty-state">No se encontraron recibos emitidos para este DNI.</td></tr>';
         return;
       }
 
-      sesionActual = JSON.parse(sesionStorage);
+      renderizarCardsAnios();
 
-      // Mostrar datos del operario en la cabecera
-      document.getElementById('lblEmpleado').innerText = sesionActual.empleado || 'Operario';
-      document.getElementById('lblDni').innerText = sesionActual.dni;
-      document.getElementById('lblLegajo').innerText = `#${sesionActual.legajo || '—'}`;
-      document.getElementById('avatarLetra').innerText = (sesionActual.empleado ? sesionActual.empleado[0] : 'O').toUpperCase();
+    } catch (err) {
+      console.error("Error cargando recibos:", err);
+      document.getElementById('tbodyRecibos').innerHTML = `<tr><td colspan="3" class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</td></tr>`;
+    }
+  }
 
-      cargarRecibosOperario();
+  // 2. Renderizar años
+  function renderizarCardsAnios() {
+    const contenedor = document.getElementById('contenedorCardsAnios');
+    const conteoPorAnio = {};
+
+    todosLosRecibos.forEach(r => {
+      let anio = 'Otros';
+      if (r.periodo && r.periodo.includes('-')) {
+        anio = r.periodo.split('-')[0].trim();
+      }
+      conteoPorAnio[anio] = (conteoPorAnio[anio] || 0) + 1;
     });
 
-    // 1. Obtener recibos desde Supabase
-    async function cargarRecibosOperario() {
-      try {
-        const { data, error } = await supabaseClient
-          .from('recibos')
-          .select('*')
-          .eq('dni', parseInt(sesionActual.dni, 10))
-          .order('periodo', { ascending: false });
+    const aniosOrdenados = Object.keys(conteoPorAnio).sort((a, b) => {
+      if (a === 'Otros') return 1;
+      if (b === 'Otros') return -1;
+      return Number(b) - Number(a);
+    });
 
-        if (error) throw error;
+    document.getElementById('lblTotalAnios').innerText = `${aniosOrdenados.length} EJERCICIOS`;
 
-        todosLosRecibos = data || [];
-
-        if (todosLosRecibos.length === 0) {
-          document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:10px;">Sin años registrados.</div>';
-          document.getElementById('tbodyRecibos').innerHTML = '<tr><td colspan="3" class="empty-state">No se encontraron recibos emitidos para este DNI.</td></tr>';
-          return;
-        }
-
-        renderizarCardsAnios();
-
-      } catch (err) {
-        console.error("Error cargando recibos:", err);
-        document.getElementById('tbodyRecibos').innerHTML = `<tr><td colspan="3" class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</td></tr>`;
-      }
+    if (!anioSeleccionado && aniosOrdenados.length > 0) {
+      anioSeleccionado = aniosOrdenados[0];
     }
 
-    // 2. ACA ES LO NUEVO: Renderizar Cards Suaves de Años en el panel izquierdo
-    function renderizarCardsAnios() {
-      const contenedor = document.getElementById('contenedorCardsAnios');
-      const conteoPorAnio = {};
-
-      todosLosRecibos.forEach(r => {
-        let anio = 'Otros';
-        if (r.periodo && r.periodo.includes('-')) {
-          anio = r.periodo.split('-')[0].trim();
-        }
-        conteoPorAnio[anio] = (conteoPorAnio[anio] || 0) + 1;
-      });
-
-      const aniosOrdenados = Object.keys(conteoPorAnio).sort((a, b) => {
-        if (a === 'Otros') return 1;
-        if (b === 'Otros') return -1;
-        return Number(b) - Number(a);
-      });
-
-      document.getElementById('lblTotalAnios').innerText = `${aniosOrdenados.length} EJERCICIOS`;
-
-      // Seleccionar por defecto el año más reciente
-      if (!anioSeleccionado && aniosOrdenados.length > 0) {
-        anioSeleccionado = aniosOrdenados[0];
-      }
-
-      contenedor.innerHTML = aniosOrdenados.map(anio => {
-        const activeClass = (anioSeleccionado === anio) ? 'active' : '';
-        const cantidad = conteoPorAnio[anio];
-        return `
-          <div class="card-anio ${activeClass}" onclick="seleccionarAnio('${anio}', this)">
-            <div class="card-anio-titulo">
-              <span>📅</span>
-              <span>Año ${anio}</span>
-            </div>
-            <span class="card-anio-cant">${cantidad}</span>
+    contenedor.innerHTML = aniosOrdenados.map(anio => {
+      const activeClass = (anioSeleccionado === anio) ? 'active' : '';
+      const cantidad = conteoPorAnio[anio];
+      return `
+        <div class="card-anio ${activeClass}" onclick="seleccionarAnio('${anio}', this)">
+          <div class="card-anio-titulo">
+            <span>📅</span>
+            <span>Año ${anio}</span>
           </div>
-        `;
-      }).join('');
+          <span class="card-anio-cant">${cantidad}</span>
+        </div>
+      `;
+    }).join('');
 
-      renderizarTablaRecibos();
+    renderizarTablaRecibos();
+  }
+
+  // 3. Seleccionar Año
+  function seleccionarAnio(anio, elCard) {
+    anioSeleccionado = anio;
+    document.querySelectorAll('.card-anio').forEach(c => c.classList.remove('active'));
+    if (elCard) elCard.classList.add('active');
+    renderizarTablaRecibos();
+  }
+
+  // 4. Renderizar Tabla
+  function renderizarTablaRecibos() {
+    const tbody = document.getElementById('tbodyRecibos');
+    const lblTitulo = document.getElementById('lblTituloEjercicio');
+    const lblContador = document.getElementById('lblContadorFiltrados');
+
+    lblTitulo.innerHTML = `📁 Recibos de Sueldo · <b>Año ${anioSeleccionado}</b>`;
+
+    const filtrados = todosLosRecibos.filter(r => {
+      if (anioSeleccionado === 'Otros') {
+        return !r.periodo || !r.periodo.includes('-');
+      }
+      return r.periodo && r.periodo.startsWith(anioSeleccionado);
+    });
+
+    lblContador.innerText = `${filtrados.length} recibos encontrados`;
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</td></tr>`;
+      return;
     }
 
-    // 3. Selección de Año
-    function seleccionarAnio(anio, elCard) {
-      anioSeleccionado = anio;
-      document.querySelectorAll('.card-anio').forEach(c => c.classList.remove('active'));
-      if (elCard) elCard.classList.add('active');
-      renderizarTablaRecibos();
-    }
-
-    // 4. ACA ES LO NUEVO: Renderizar Lista Grande con columnas LEGAJO | PERÍODO | ACCIONES
-    function renderizarTablaRecibos() {
-      const tbody = document.getElementById('tbodyRecibos');
-      const lblTitulo = document.getElementById('lblTituloEjercicio');
-      const lblContador = document.getElementById('lblContadorFiltrados');
-
-      lblTitulo.innerHTML = `📁 Recibos de Sueldo · <b>Año ${anioSeleccionado}</b>`;
-
-      const filtrados = todosLosRecibos.filter(r => {
-        if (anioSeleccionado === 'Otros') {
-          return !r.periodo || !r.periodo.includes('-');
+    tbody.innerHTML = filtrados.map(r => {
+      let nombrePeriodo = r.periodo;
+      if (r.periodo && r.periodo.includes('-')) {
+        const [anio, mesNum] = r.periodo.split('-');
+        const indice = parseInt(mesNum, 10) - 1;
+        if (indice >= 0 && indice < 12) {
+          nombrePeriodo = `${NOMBRES_MESES[indice]} ${anio}`;
         }
-        return r.periodo && r.periodo.startsWith(anioSeleccionado);
-      });
-
-      lblContador.innerText = `${filtrados.length} recibos encontrados`;
-
-      if (filtrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</td></tr>`;
-        return;
       }
 
-      tbody.innerHTML = filtrados.map(r => {
-        // Formatear visualmente el período (ej: 2026-08 -> Agosto 2026)
-        let nombrePeriodo = r.periodo;
-        if (r.periodo && r.periodo.includes('-')) {
-          const [anio, mesNum] = r.periodo.split('-');
-          const indice = parseInt(mesNum, 10) - 1;
-          if (indice >= 0 && indice < 12) {
-            nombrePeriodo = `${NOMBRES_MESES[indice]} ${anio}`;
-          }
-        }
+      const legajoMostrar = r.legajo || sesionActual.legajo || '—';
 
-        const legajoMostrar = r.legajo || sesionActual.legajo || '—';
+      return `
+        <tr>
+          <td>
+            <span class="badge-legajo-table">#${legajoMostrar}</span>
+          </td>
+          <td>
+            <div class="periodo-mes-principal">${nombrePeriodo}</div>
+            <div class="periodo-codigo-sub">Período imputado: ${r.periodo}</div>
+          </td>
+          <td>
+            <div class="acciones-flex">
+              <button class="btn-action btn-ver" onclick="verRecibo('${r.pdf_path}')">
+                👁️ Ver
+              </button>
+              <button class="btn-action btn-descargar" onclick="descargarRecibo('${r.pdf_path}', '${r.periodo}')">
+                ⬇️ Descargar
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
 
-        return `
-          <tr>
-            <td>
-              <span class="badge-legajo-table">#${legajoMostrar}</span>
-            </td>
-            <td>
-              <div class="periodo-mes-principal">${nombrePeriodo}</div>
-              <div class="periodo-codigo-sub">Período imputado: ${r.periodo}</div>
-            </td>
-            <td>
-              <div class="acciones-flex">
-                <button class="btn-action btn-ver" onclick="verRecibo('${r.pdf_path}')">
-                  👁️ Ver
-                </button>
-                <button class="btn-action btn-descargar" onclick="descargarRecibo('${r.pdf_path}', '${r.periodo}')">
-                  ⬇️ Descargar
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
+  // 5. Previsualizar archivo PDF
+  async function verRecibo(pdfPath) {
+    try {
+      const { data, error } = await supabaseClient.storage
+        .from('recibos')
+        .createSignedUrl(pdfPath, 3600);
 
-    // 5. Ver Recibo (URL firmada de Supabase Storage)
-    async function verRecibo(pdfPath) {
-      try {
-        const { data, error } = await supabaseClient.storage
-          .from('recibos')
-          .createSignedUrl(pdfPath, 3600);
-
-        if (error) throw error;
-        if (data && data.signedUrl) {
-          window.open(data.signedUrl, '_blank');
-        }
-      } catch (err) {
-        alert("No se pudo previsualizar el recibo: " + err.message);
+      if (error) throw error;
+      if (data && data.signedUrl) {
+        window.open(data.signedUrl, '_blank');
       }
+    } catch (err) {
+      alert("No se pudo previsualizar el recibo: " + err.message);
     }
+  }
 
-    // 6. Descargar Recibo directo
-    async function descargarRecibo(pdfPath, periodo) {
-      try {
-        const { data, error } = await supabaseClient.storage
-          .from('recibos')
-          .download(pdfPath);
+  // 6. Descargar PDF
+  async function descargarRecibo(pdfPath, periodo) {
+    try {
+      const { data, error } = await supabaseClient.storage
+        .from('recibos')
+        .download(pdfPath);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        const blobUrl = URL.createObjectURL(data);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `Recibo_${periodo}_${sesionActual.dni}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
+      const blobUrl = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `Recibo_${periodo}_${sesionActual.dni}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
 
-      } catch (err) {
-        alert("Error al descargar el archivo: " + err.message);
-      }
+    } catch (err) {
+      alert("Error al descargar el archivo: " + err.message);
     }
+  }
 
-    function cerrarSesion() {
-      localStorage.removeItem('operario_sesion');
-      window.location.href = 'loguer.html';
-    }
-  </script>
+  // Cerrar Sesión corregido a index.html
+  function cerrarSesion() {
+    localStorage.removeItem('operario_sesion');
+    window.location.href = 'loguer.html';
+  }
+</script>
 </body>
 </html>
