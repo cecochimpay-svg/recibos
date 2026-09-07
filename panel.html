@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co;" />
+  <title>Mis Recibos de Sueldo · CECO S.A.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --color-bg: #F3F5F1;
+      --color-surface: #FFFFFF;
+      --color-plant: #1E6B4C;
+      --color-plant-dark: #123F2C;
+      --color-plant-soft: rgba(30, 107, 76, 0.08);
+      --color-text: #1B231D;
+      --color-text-secondary: #64748B;
+      --color-border: #E2E8F0;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: var(--font-family);
+      background: var(--color-bg);
+      color: var(--color-text);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #DAD4C8; border-radius: 20px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--color-plant); }
+
+    /* Topbar Superior */
+    .topbar {
+      background: #FFFFFF;
+      border-bottom: 1.5px solid var(--color-border);
+      padding: 12px 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      flex-shrink: 0;
+    }
+
+    .user-info-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--color-plant);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: 0 3px 8px rgba(30, 107, 76, 0.25);
+    }
+
+    .user-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--color-plant-dark);
+      line-height: 1.2;
+    }
+
+    .user-sub {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .btn-logout {
+      background: #F8FAFC;
+      border: 1.2px solid var(--color-border);
+      color: var(--color-text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-logout:hover {
+      background: #FEE2E2;
+      border-color: #FCA5A5;
+      color: #991B1B;
+      transform: translateY(-1px);
+    }
+
+    button:active, .card-anio:active, .btn-action:active {
+      background-color: #FFFDE7 !important;
+      border-color: #FBC02D !important;
+      color: #D97706 !important;
+      box-shadow: inset 0 3px 8px rgba(251, 192, 45, 0.25) !important;
+      transform: scale(0.98);
+    }
+
+    /* Layout Split Container */
+    .layout-panel {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      padding: 24px 34px;
+      flex: 1;
+      overflow: hidden;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Panel Izquierdo: Cards Suaves de Años */
+    .sidebar-anios {
+      background: var(--color-surface);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 8px rgba(20, 30, 24, 0.03);
+      overflow: hidden;
+    }
+
+    .sidebar-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cards-anios-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      padding-right: 4px;
+      flex: 1;
+    }
+
+    .card-anio {
+      background: #F8FAFC;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-anio:hover {
+      background: #FFFFFF;
+      border-color: var(--color-plant);
+      transform: translateX(3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .card-anio.active {
+      background: var(--color-plant-soft);
+      border-color: var(--color-plant);
+      box-shadow: 0 3px 10px rgba(30, 107, 76, 0.12);
+    }
+
+    .card-anio-titulo {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--color-plant-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-anio-cant {
+      background: var(--color-plant);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 12px;
+      min-width: 26px;
+      text-align: center;
+    }
+
+    .card-anio.active .card-anio-cant {
+      background: var(--color-plant-dark);
+    }
+
+    /* Panel Derecho: Lista Grande de Recibos */
+    .content-recibos {
+      background: var(--color-surface);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 22px 26px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 8px rgba(20, 30, 24, 0.03);
+      overflow: hidden;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1.5px solid var(--color-border);
+      padding-bottom: 14px;
+      flex-shrink: 0;
+    }
+
+    .header-titulo {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--color-plant-dark);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tabla-scroll-box {
+      flex: 1;
+      overflow-y: auto;
+      border: 1.2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: #FFFFFF;
+    }
+
+    /* Tabla de Recibos */
+    table.tabla-recibos {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    table.tabla-recibos th {
+      position: sticky;
+      top: 0;
+      background: #475569;
+      color: #FFFFFF;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 13px 18px;
+      text-align: left;
+      z-index: 10;
+      border-bottom: 2px solid var(--color-border);
+    }
+
+    table.tabla-recibos td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text);
+      vertical-align: middle;
+    }
+
+    table.tabla-recibos tbody tr:hover td {
+      background: var(--color-plant-soft);
+    }
+
+    .badge-legajo-table {
+      background: #F1F5F9;
+      color: var(--color-plant-dark);
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      font-size: 12.5px;
+      display: inline-block;
+    }
+
+    .periodo-mes-principal {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--color-plant-dark);
+      text-transform: capitalize;
+    }
+
+    .periodo-codigo-sub {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Botones de Acción */
+    .acciones-flex {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn-action {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-ver {
+      background: #F8FAFC;
+      border: 1.2px solid var(--color-border);
+      color: var(--color-text);
+    }
+    .btn-ver:hover {
+      background: #E2E8F0;
+      border-color: #CBD5E1;
+      transform: translateY(-1px);
+    }
+
+    .btn-descargar {
+      background: var(--color-plant);
+      border: 1px solid var(--color-plant);
+      color: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(30, 107, 76, 0.2);
+    }
+    .btn-descargar:hover {
+      background: var(--color-plant-dark);
+      transform: translateY(-1px);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      font-size: 13.5px;
+    }
+
+    @media (max-width: 860px) {
+      .layout-panel {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+      }
+      .sidebar-anios {
+        max-height: 220px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar Superior -->
+  <header class="topbar">
+    <div class="user-info-header">
+      <div class="user-avatar" id="avatarLetra">O</div>
+      <div>
+        <div class="user-name" id="lblEmpleado">Cargando operario...</div>
+        <div class="user-sub">
+          DNI: <b id="lblDni">—</b> | Legajo: <b id="lblLegajo">—</b>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-logout" onclick="cerrarSesion()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+      Cerrar Sesión
+    </button>
+  </header>
+
+  <!-- Layout Principal -->
+  <div class="layout-panel">
+
+    <!-- Panel Izquierdo: Cards Suaves de Años -->
+    <aside class="sidebar-anios">
+      <div class="sidebar-title">
+        <span>Años Disponibles</span>
+        <span id="lblTotalAnios" style="font-size: 10px; color: var(--color-plant); font-weight: 900;">—</span>
+      </div>
+
+      <div class="cards-anios-container" id="contenedorCardsAnios">
+        <div style="font-size: 12px; color: var(--color-text-secondary); padding: 10px;">Cargando años...</div>
+      </div>
+    </aside>
+
+    <!-- Panel Derecho: Lista Grande de Recibos -->
+    <main class="content-recibos">
+      <div class="header-content">
+        <h2 class="header-titulo" id="lblTituloEjercicio">
+          📁 Recibos de Sueldo
+        </h2>
+        <span id="lblContadorFiltrados" style="font-size: 12px; font-weight: 700; color: var(--color-text-secondary);">
+          0 recibos
+        </span>
+      </div>
+
+      <div class="tabla-scroll-box">
+        <table class="tabla-recibos">
+          <thead>
+            <tr>
+              <th style="width: 20%;">LEGAJO</th>
+              <th style="width: 45%;">PERÍODO</th>
+              <th style="width: 35%; text-align: right;">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyRecibos">
+            <tr>
+              <td colspan="3" class="empty-state">Seleccioná un año para ver tus recibos.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://zsgqlmfzidazdtpgmuna.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzZ3FsbWZ6aWRhemR0cGdtdW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTY3NDIsImV4cCI6MjA5Nzc5Mjc0Mn0.Y9dDHLdQGIOcVS3JaYnbUHWlwul4uiEkkb7udeoF-b0';
+
+    // ESTO LO MODIFIQUE: supabaseClient unificado para evitar conflictos de nombres
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let sesionActual = null;
+    let todosLosRecibos = [];
+    let anioSeleccionado = '';
+
+    const NOMBRES_MESES = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sesionStorage = localStorage.getItem('operario_sesion');
+      if (!sesionStorage) {
+        window.location.href = 'loguer.html';
+        return;
+      }
+
+      sesionActual = JSON.parse(sesionStorage);
+
+      // Mostrar datos del operario en la cabecera
+      document.getElementById('lblEmpleado').innerText = sesionActual.empleado || 'Operario';
+      document.getElementById('lblDni').innerText = sesionActual.dni;
+      document.getElementById('lblLegajo').innerText = `#${sesionActual.legajo || '—'}`;
+      document.getElementById('avatarLetra').innerText = (sesionActual.empleado ? sesionActual.empleado[0] : 'O').toUpperCase();
+
+      cargarRecibosOperario();
+    });
+
+    // 1. Obtener recibos desde Supabase
+    async function cargarRecibosOperario() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('recibos')
+          .select('*')
+          .eq('dni', parseInt(sesionActual.dni, 10))
+          .order('periodo', { ascending: false });
+
+        if (error) throw error;
+
+        todosLosRecibos = data || [];
+
+        if (todosLosRecibos.length === 0) {
+          document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:10px;">Sin años registrados.</div>';
+          document.getElementById('tbodyRecibos').innerHTML = '<tr><td colspan="3" class="empty-state">No se encontraron recibos emitidos para este DNI.</td></tr>';
+          return;
+        }
+
+        renderizarCardsAnios();
+
+      } catch (err) {
+        console.error("Error cargando recibos:", err);
+        document.getElementById('tbodyRecibos').innerHTML = `<tr><td colspan="3" class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</td></tr>`;
+      }
+    }
+
+    // 2. ACA ES LO NUEVO: Renderizar Cards Suaves de Años en el panel izquierdo
+    function renderizarCardsAnios() {
+      const contenedor = document.getElementById('contenedorCardsAnios');
+      const conteoPorAnio = {};
+
+      todosLosRecibos.forEach(r => {
+        let anio = 'Otros';
+        if (r.periodo && r.periodo.includes('-')) {
+          anio = r.periodo.split('-')[0].trim();
+        }
+        conteoPorAnio[anio] = (conteoPorAnio[anio] || 0) + 1;
+      });
+
+      const aniosOrdenados = Object.keys(conteoPorAnio).sort((a, b) => {
+        if (a === 'Otros') return 1;
+        if (b === 'Otros') return -1;
+        return Number(b) - Number(a);
+      });
+
+      document.getElementById('lblTotalAnios').innerText = `${aniosOrdenados.length} EJERCICIOS`;
+
+      // Seleccionar por defecto el año más reciente
+      if (!anioSeleccionado && aniosOrdenados.length > 0) {
+        anioSeleccionado = aniosOrdenados[0];
+      }
+
+      contenedor.innerHTML = aniosOrdenados.map(anio => {
+        const activeClass = (anioSeleccionado === anio) ? 'active' : '';
+        const cantidad = conteoPorAnio[anio];
+        return `
+          <div class="card-anio ${activeClass}" onclick="seleccionarAnio('${anio}', this)">
+            <div class="card-anio-titulo">
+              <span>📅</span>
+              <span>Año ${anio}</span>
+            </div>
+            <span class="card-anio-cant">${cantidad}</span>
+          </div>
+        `;
+      }).join('');
+
+      renderizarTablaRecibos();
+    }
+
+    // 3. Selección de Año
+    function seleccionarAnio(anio, elCard) {
+      anioSeleccionado = anio;
+      document.querySelectorAll('.card-anio').forEach(c => c.classList.remove('active'));
+      if (elCard) elCard.classList.add('active');
+      renderizarTablaRecibos();
+    }
+
+    // 4. ACA ES LO NUEVO: Renderizar Lista Grande con columnas LEGAJO | PERÍODO | ACCIONES
+    function renderizarTablaRecibos() {
+      const tbody = document.getElementById('tbodyRecibos');
+      const lblTitulo = document.getElementById('lblTituloEjercicio');
+      const lblContador = document.getElementById('lblContadorFiltrados');
+
+      lblTitulo.innerHTML = `📁 Recibos de Sueldo · <b>Año ${anioSeleccionado}</b>`;
+
+      const filtrados = todosLosRecibos.filter(r => {
+        if (anioSeleccionado === 'Otros') {
+          return !r.periodo || !r.periodo.includes('-');
+        }
+        return r.periodo && r.periodo.startsWith(anioSeleccionado);
+      });
+
+      lblContador.innerText = `${filtrados.length} recibos encontrados`;
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtrados.map(r => {
+        // Formatear visualmente el período (ej: 2026-08 -> Agosto 2026)
+        let nombrePeriodo = r.periodo;
+        if (r.periodo && r.periodo.includes('-')) {
+          const [anio, mesNum] = r.periodo.split('-');
+          const indice = parseInt(mesNum, 10) - 1;
+          if (indice >= 0 && indice < 12) {
+            nombrePeriodo = `${NOMBRES_MESES[indice]} ${anio}`;
+          }
+        }
+
+        const legajoMostrar = r.legajo || sesionActual.legajo || '—';
+
+        return `
+          <tr>
+            <td>
+              <span class="badge-legajo-table">#${legajoMostrar}</span>
+            </td>
+            <td>
+              <div class="periodo-mes-principal">${nombrePeriodo}</div>
+              <div class="periodo-codigo-sub">Período imputado: ${r.periodo}</div>
+            </td>
+            <td>
+              <div class="acciones-flex">
+                <button class="btn-action btn-ver" onclick="verRecibo('${r.pdf_path}')">
+                  👁️ Ver
+                </button>
+                <button class="btn-action btn-descargar" onclick="descargarRecibo('${r.pdf_path}', '${r.periodo}')">
+                  ⬇️ Descargar
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 5. Ver Recibo (URL firmada de Supabase Storage)
+    async function verRecibo(pdfPath) {
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from('recibos')
+          .createSignedUrl(pdfPath, 3600);
+
+        if (error) throw error;
+        if (data && data.signedUrl) {
+          window.open(data.signedUrl, '_blank');
+        }
+      } catch (err) {
+        alert("No se pudo previsualizar el recibo: " + err.message);
+      }
+    }
+
+    // 6. Descargar Recibo directo
+    async function descargarRecibo(pdfPath, periodo) {
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from('recibos')
+          .download(pdfPath);
+
+        if (error) throw error;
+
+        const blobUrl = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Recibo_${periodo}_${sesionActual.dni}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+      } catch (err) {
+        alert("Error al descargar el archivo: " + err.message);
+      }
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('operario_sesion');
+      window.location.href = 'loguer.html';
+    }
+  </script>
+</body>
+</html>
