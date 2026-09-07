@@ -320,6 +320,33 @@
       margin-top: 2px;
     }
 
+    /* Badges de Firma */
+    .badge-firmado {
+      background: #DEF7EC;
+      color: #03543F;
+      border: 1px solid #BCF0DA;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-pendiente {
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     /* Botones de Acción */
     .acciones-flex {
       display: flex;
@@ -368,6 +395,72 @@
       color: var(--color-text-secondary);
       font-weight: 600;
       font-size: 13.5px;
+    }
+
+    /* Modal de Firma en Pantalla */
+    .modal-overlay-firma {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      padding: 16px;
+    }
+
+    .modal-firma-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      border: 1.5px solid var(--color-border);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: entrar 0.2s ease forwards;
+    }
+
+    @keyframes entrar {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .canvas-contenedor {
+      border: 1.5px dashed var(--color-plant);
+      border-radius: 12px;
+      background: #FAFAF8;
+      position: relative;
+      touch-action: none;
+      overflow: hidden;
+      width: 100%;
+      height: 180px;
+    }
+
+    #canvasFirma {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .linea-guia-firma {
+      position: absolute;
+      bottom: 25px;
+      left: 30px;
+      right: 30px;
+      border-bottom: 1px dashed #CBD5E1;
+      pointer-events: none;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding-bottom: 4px;
     }
 
     @media (max-width: 860px) {
@@ -447,220 +540,444 @@
 
   </div>
 
+  <!-- Modal de Firma en Pantalla -->
+  <div class="modal-overlay-firma" id="modalFirma">
+    <div class="modal-firma-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h3 style="margin:0; font-family:'Montserrat'; font-size:16px; font-weight:800; color:var(--color-plant-dark);">
+            ✍️ Firma de Conformidad
+          </h3>
+          <span id="lblSubtituloFirma" style="font-size:12px; color:var(--color-text-secondary);">
+            Recibo de haberes
+          </span>
+        </div>
+        <button onclick="cerrarModalFirma()" style="background:#F1F5F9; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-weight:800; color:#64748B;">✕</button>
+      </div>
+
+      <div class="canvas-contenedor" id="canvasBox">
+        <canvas id="canvasFirma"></canvas>
+        <div class="linea-guia-firma" id="lblGuiaFirma">Firmar aquí con el dedo o mouse</div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
+        <button type="button" class="btn-action btn-ver" style="font-size:11px; padding:6px 12px;" onclick="limpiarCanvas()">
+          🔄 Limpiar
+        </button>
+
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-action btn-ver" style="font-size:11px; padding:6px 14px;" onclick="cerrarModalFirma()">
+            Cancelar
+          </button>
+          <button type="button" class="btn-action btn-descargar" id="btnConfirmarFirma" style="font-size:11px; padding:6px 18px;" onclick="procesarFirmaYAccion()">
+            Confirmar y Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-  const SUPABASE_URL = 'https://zsgqlmfzidazdtpgmuna.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzZ3FsbWZ6aWRhemR0cGdtdW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTY3NDIsImV4cCI6MjA5Nzc5Mjc0Mn0.Y9dDHLdQGIOcVS3JaYnbUHWlwul4uiEkkb7udeoF-b0';
+    const SUPABASE_URL = 'https://zsgqlmfzidazdtpgmuna.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzZ3FsbWZ6aWRhemR0cGdtdW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTY3NDIsImV4cCI6MjA5Nzc5Mjc0Mn0.Y9dDHLdQGIOcVS3JaYnbUHWlwul4uiEkkb7udeoF-b0';
 
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let sesionActual = null;
-  let todosLosRecibos = [];
-  let anioSeleccionado = '';
+    let sesionActual = null;
+    let todosLosRecibos = [];
+    let anioSeleccionado = '';
+    let operacionPendiente = null;
 
-  const NOMBRES_MESES = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
+    // Variables del Canvas
+    let canvas = null;
+    let ctx = null;
+    let dibujando = false;
+    let trazoRealizado = false;
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const sesionStorage = localStorage.getItem('operario_sesion');
-    
-    // Corregido a index.html
-    if (!sesionStorage) {
-      window.location.href = 'index.html';
-      return;
-    }
+    const NOMBRES_MESES = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
 
-    sesionActual = JSON.parse(sesionStorage);
-
-    // Header del Operario
-    document.getElementById('lblEmpleado').innerText = sesionActual.empleado || 'Operario';
-    document.getElementById('lblDni').innerText = sesionActual.dni;
-    document.getElementById('lblLegajo').innerText = `#${sesionActual.legajo || '—'}`;
-    document.getElementById('avatarLetra').innerText = (sesionActual.empleado ? sesionActual.empleado[0] : 'O').toUpperCase();
-
-    cargarRecibosOperario();
-  });
-
-  // 1. Obtener recibos desde Supabase
-  async function cargarRecibosOperario() {
-    try {
-      const { data, error } = await supabaseClient
-        .from('recibos')
-        .select('*')
-        .eq('dni', parseInt(sesionActual.dni, 10))
-        .order('periodo', { ascending: false });
-
-      if (error) throw error;
-
-      todosLosRecibos = data || [];
-
-      if (todosLosRecibos.length === 0) {
-        document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:10px;">Sin años registrados.</div>';
-        document.getElementById('tbodyRecibos').innerHTML = '<tr><td colspan="3" class="empty-state">No se encontraron recibos emitidos para este DNI.</td></tr>';
+    document.addEventListener('DOMContentLoaded', () => {
+      const sesionStorage = localStorage.getItem('operario_sesion');
+      if (!sesionStorage) {
+        window.location.href = 'loguer.html';
         return;
       }
 
-      renderizarCardsAnios();
+      sesionActual = JSON.parse(sesionStorage);
 
-    } catch (err) {
-      console.error("Error cargando recibos:", err);
-      document.getElementById('tbodyRecibos').innerHTML = `<tr><td colspan="3" class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</td></tr>`;
-    }
-  }
+      // Header del Operario
+      document.getElementById('lblEmpleado').innerText = sesionActual.empleado || 'Operario';
+      document.getElementById('lblDni').innerText = sesionActual.dni;
+      document.getElementById('lblLegajo').innerText = `#${sesionActual.legajo || '—'}`;
+      document.getElementById('avatarLetra').innerText = (sesionActual.empleado ? sesionActual.empleado[0] : 'O').toUpperCase();
 
-  // 2. Renderizar años
-  function renderizarCardsAnios() {
-    const contenedor = document.getElementById('contenedorCardsAnios');
-    const conteoPorAnio = {};
-
-    todosLosRecibos.forEach(r => {
-      let anio = 'Otros';
-      if (r.periodo && r.periodo.includes('-')) {
-        anio = r.periodo.split('-')[0].trim();
-      }
-      conteoPorAnio[anio] = (conteoPorAnio[anio] || 0) + 1;
+      inicializarEventosCanvas();
+      cargarRecibosOperario();
     });
 
-    const aniosOrdenados = Object.keys(conteoPorAnio).sort((a, b) => {
-      if (a === 'Otros') return 1;
-      if (b === 'Otros') return -1;
-      return Number(b) - Number(a);
-    });
+    // 1. Obtener recibos desde Supabase
+    async function cargarRecibosOperario() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('recibos')
+          .select('*')
+          .eq('dni', parseInt(sesionActual.dni, 10))
+          .order('periodo', { ascending: false });
 
-    document.getElementById('lblTotalAnios').innerText = `${aniosOrdenados.length} EJERCICIOS`;
+        if (error) throw error;
 
-    if (!anioSeleccionado && aniosOrdenados.length > 0) {
-      anioSeleccionado = aniosOrdenados[0];
-    }
+        todosLosRecibos = data || [];
 
-    contenedor.innerHTML = aniosOrdenados.map(anio => {
-      const activeClass = (anioSeleccionado === anio) ? 'active' : '';
-      const cantidad = conteoPorAnio[anio];
-      return `
-        <div class="card-anio ${activeClass}" onclick="seleccionarAnio('${anio}', this)">
-          <div class="card-anio-titulo">
-            <span>📅</span>
-            <span>Año ${anio}</span>
-          </div>
-          <span class="card-anio-cant">${cantidad}</span>
-        </div>
-      `;
-    }).join('');
-
-    renderizarTablaRecibos();
-  }
-
-  // 3. Seleccionar Año
-  function seleccionarAnio(anio, elCard) {
-    anioSeleccionado = anio;
-    document.querySelectorAll('.card-anio').forEach(c => c.classList.remove('active'));
-    if (elCard) elCard.classList.add('active');
-    renderizarTablaRecibos();
-  }
-
-  // 4. Renderizar Tabla
-  function renderizarTablaRecibos() {
-    const tbody = document.getElementById('tbodyRecibos');
-    const lblTitulo = document.getElementById('lblTituloEjercicio');
-    const lblContador = document.getElementById('lblContadorFiltrados');
-
-    lblTitulo.innerHTML = `📁 Recibos de Sueldo · <b>Año ${anioSeleccionado}</b>`;
-
-    const filtrados = todosLosRecibos.filter(r => {
-      if (anioSeleccionado === 'Otros') {
-        return !r.periodo || !r.periodo.includes('-');
-      }
-      return r.periodo && r.periodo.startsWith(anioSeleccionado);
-    });
-
-    lblContador.innerText = `${filtrados.length} recibos encontrados`;
-
-    if (filtrados.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = filtrados.map(r => {
-      let nombrePeriodo = r.periodo;
-      if (r.periodo && r.periodo.includes('-')) {
-        const [anio, mesNum] = r.periodo.split('-');
-        const indice = parseInt(mesNum, 10) - 1;
-        if (indice >= 0 && indice < 12) {
-          nombrePeriodo = `${NOMBRES_MESES[indice]} ${anio}`;
+        if (todosLosRecibos.length === 0) {
+          document.getElementById('contenedorCardsAnios').innerHTML = '<div style="font-size:12px; color:var(--color-text-secondary); padding:10px;">Sin años registrados.</div>';
+          document.getElementById('tbodyRecibos').innerHTML = '<tr><td colspan="3" class="empty-state">No se encontraron recibos emitidos para este DNI.</td></tr>';
+          return;
         }
+
+        renderizarCardsAnios();
+
+      } catch (err) {
+        console.error("Error cargando recibos:", err);
+        document.getElementById('tbodyRecibos').innerHTML = `<tr><td colspan="3" class="empty-state" style="color:#DC2626;">Error al consultar recibos: ${err.message}</td></tr>`;
+      }
+    }
+
+    // 2. Renderizar años
+    function renderizarCardsAnios() {
+      const contenedor = document.getElementById('contenedorCardsAnios');
+      const conteoPorAnio = {};
+
+      todosLosRecibos.forEach(r => {
+        let anio = 'Otros';
+        if (r.periodo && r.periodo.includes('-')) {
+          anio = r.periodo.split('-')[0].trim();
+        }
+        conteoPorAnio[anio] = (conteoPorAnio[anio] || 0) + 1;
+      });
+
+      const aniosOrdenados = Object.keys(conteoPorAnio).sort((a, b) => {
+        if (a === 'Otros') return 1;
+        if (b === 'Otros') return -1;
+        return Number(b) - Number(a);
+      });
+
+      document.getElementById('lblTotalAnios').innerText = `${aniosOrdenados.length} EJERCICIOS`;
+
+      if (!anioSeleccionado && aniosOrdenados.length > 0) {
+        anioSeleccionado = aniosOrdenados[0];
       }
 
-      const legajoMostrar = r.legajo || sesionActual.legajo || '—';
-
-      return `
-        <tr>
-          <td>
-            <span class="badge-legajo-table">#${legajoMostrar}</span>
-          </td>
-          <td>
-            <div class="periodo-mes-principal">${nombrePeriodo}</div>
-            <div class="periodo-codigo-sub">Período imputado: ${r.periodo}</div>
-          </td>
-          <td>
-            <div class="acciones-flex">
-              <button class="btn-action btn-ver" onclick="verRecibo('${r.pdf_path}')">
-                👁️ Ver
-              </button>
-              <button class="btn-action btn-descargar" onclick="descargarRecibo('${r.pdf_path}', '${r.periodo}')">
-                ⬇️ Descargar
-              </button>
+      contenedor.innerHTML = aniosOrdenados.map(anio => {
+        const activeClass = (anioSeleccionado === anio) ? 'active' : '';
+        const cantidad = conteoPorAnio[anio];
+        return `
+          <div class="card-anio ${activeClass}" onclick="seleccionarAnio('${anio}', this)">
+            <div class="card-anio-titulo">
+              <span>📅</span>
+              <span>Año ${anio}</span>
             </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  }
+            <span class="card-anio-cant">${cantidad}</span>
+          </div>
+        `;
+      }).join('');
 
-  // 5. Previsualizar archivo PDF
-  async function verRecibo(pdfPath) {
-    try {
-      const { data, error } = await supabaseClient.storage
-        .from('recibos')
-        .createSignedUrl(pdfPath, 3600);
+      renderizarTablaRecibos();
+    }
 
-      if (error) throw error;
-      if (data && data.signedUrl) {
-        window.open(data.signedUrl, '_blank');
+    // 3. Seleccionar Año
+    function seleccionarAnio(anio, elCard) {
+      anioSeleccionado = anio;
+      document.querySelectorAll('.card-anio').forEach(c => c.classList.remove('active'));
+      if (elCard) elCard.classList.add('active');
+      renderizarTablaRecibos();
+    }
+
+    // 4. Renderizar Tabla con verificación de firma
+    function renderizarTablaRecibos() {
+      const tbody = document.getElementById('tbodyRecibos');
+      const lblTitulo = document.getElementById('lblTituloEjercicio');
+      const lblContador = document.getElementById('lblContadorFiltrados');
+
+      lblTitulo.innerHTML = `📁 Recibos de Sueldo · <b>Año ${anioSeleccionado}</b>`;
+
+      const filtrados = todosLosRecibos.filter(r => {
+        if (anioSeleccionado === 'Otros') {
+          return !r.periodo || !r.periodo.includes('-');
+        }
+        return r.periodo && r.periodo.startsWith(anioSeleccionado);
+      });
+
+      lblContador.innerText = `${filtrados.length} recibos encontrados`;
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No hay recibos registrados en el año ${anioSeleccionado}.</td></tr>`;
+        return;
       }
-    } catch (err) {
-      alert("No se pudo previsualizar el recibo: " + err.message);
+
+      tbody.innerHTML = filtrados.map(r => {
+        let nombrePeriodo = r.periodo;
+        if (r.periodo && r.periodo.includes('-')) {
+          const [anio, mesNum] = r.periodo.split('-');
+          const indice = parseInt(mesNum, 10) - 1;
+          if (indice >= 0 && indice < 12) {
+            nombrePeriodo = `${NOMBRES_MESES[indice]} ${anio}`;
+          }
+        }
+
+        const legajoMostrar = r.legajo || sesionActual.legajo || '—';
+        const estaFirmado = !!r.firmado;
+
+        const badgeFirma = estaFirmado
+          ? `<span class="badge-firmado">✓ Firmado</span>`
+          : `<span class="badge-pendiente">⏳ Pendiente firma</span>`;
+
+        return `
+          <tr>
+            <td>
+              <span class="badge-legajo-table">#${legajoMostrar}</span>
+            </td>
+            <td>
+              <div class="periodo-mes-principal">${nombrePeriodo}</div>
+              <div class="periodo-codigo-sub" style="display:flex; align-items:center; gap:8px;">
+                <span>Período: ${r.periodo}</span>
+                ${badgeFirma}
+              </div>
+            </td>
+            <td>
+              <div class="acciones-flex">
+                <button class="btn-action btn-ver" onclick="solicitarFirmaOEjecutar('ver', '${r.id}', '${r.pdf_path}', '${r.periodo}', ${estaFirmado})">
+                  👁️ Ver
+                </button>
+                <button class="btn-action btn-descargar" onclick="solicitarFirmaOEjecutar('descargar', '${r.id}', '${r.pdf_path}', '${r.periodo}', ${estaFirmado})">
+                  ⬇️ Descargar
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
-  }
 
-  // 6. Descargar PDF
-  async function descargarRecibo(pdfPath, periodo) {
-    try {
-      const { data, error } = await supabaseClient.storage
-        .from('recibos')
-        .download(pdfPath);
+    // 5. Interceptador de Firma
+    function solicitarFirmaOEjecutar(tipo, reciboId, pdfPath, periodo, firmado) {
+      operacionPendiente = { tipo, reciboId, pdfPath, periodo, firmado };
 
-      if (error) throw error;
+      if (firmado) {
+        ejecutarAccionFinal();
+        return;
+      }
 
-      const blobUrl = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = `Recibo_${periodo}_${sesionActual.dni}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-
-    } catch (err) {
-      alert("Error al descargar el archivo: " + err.message);
+      document.getElementById('lblSubtituloFirma').innerText = `Período: ${periodo} · Legajo: #${sesionActual.legajo || '—'}`;
+      abrirModalFirma();
     }
-  }
 
-  // Cerrar Sesión corregido a index.html
-  function cerrarSesion() {
-    localStorage.removeItem('operario_sesion');
-    window.location.href = 'loguer.html';
-  }
-</script>
+    // 6. Configuración y Eventos del Canvas
+    function inicializarEventosCanvas() {
+      canvas = document.getElementById('canvasFirma');
+      ctx = canvas.getContext('2d');
+
+      // Mouse
+      canvas.addEventListener('mousedown', (e) => iniciarTrazo(e.clientX, e.clientY));
+      canvas.addEventListener('mousemove', (e) => moverTrazo(e.clientX, e.clientY));
+      window.addEventListener('mouseup', detenerTrazo);
+
+      // Touch (pantallas táctiles / celulares)
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          const t = e.touches[0];
+          iniciarTrazo(t.clientX, t.clientY);
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          const t = e.touches[0];
+          moverTrazo(t.clientX, t.clientY);
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', detenerTrazo);
+    }
+
+    function ajustarDimensionesCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 2.6;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+
+    function obtenerCoords(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function iniciarTrazo(x, y) {
+      dibujando = true;
+      trazoRealizado = true;
+      document.getElementById('lblGuiaFirma').style.opacity = '0.3';
+      const p = obtenerCoords(x, y);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+
+    function moverTrazo(x, y) {
+      if (!dibujando) return;
+      const p = obtenerCoords(x, y);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+
+    function detenerTrazo() {
+      if (dibujando) {
+        ctx.closePath();
+        dibujando = false;
+      }
+    }
+
+    function limpiarCanvas() {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      trazoRealizado = false;
+      document.getElementById('lblGuiaFirma').style.opacity = '1';
+    }
+
+    function abrirModalFirma() {
+      document.getElementById('modalFirma').style.display = 'flex';
+      setTimeout(() => {
+        ajustarDimensionesCanvas();
+        limpiarCanvas();
+      }, 50);
+    }
+
+    function cerrarModalFirma() {
+      document.getElementById('modalFirma').style.display = 'none';
+      operacionPendiente = null;
+    }
+
+    // 7. Procesar firma digital y subir a Storage
+    async function procesarFirmaYAccion() {
+      if (!trazoRealizado) {
+        return alert("Por favor realizá tu firma en el recuadro antes de continuar.");
+      }
+
+      const btn = document.getElementById('btnConfirmarFirma');
+      btn.disabled = true;
+      btn.innerText = "Registrando...";
+
+      try {
+        const { reciboId, periodo } = operacionPendiente;
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+        // Guardar PNG en Storage
+        const firmaStoragePath = `${periodo}/firmas/${sesionActual.dni}_${periodo}.png`;
+
+        const { error: errStorage } = await supabaseClient.storage
+          .from('recibos')
+          .upload(firmaStoragePath, blob, {
+            contentType: 'image/png',
+            upsert: true
+          });
+
+        if (errStorage) throw errStorage;
+
+        // Actualizar tabla public.recibos
+        const { error: errDb } = await supabaseClient
+          .from('recibos')
+          .update({
+            firmado: true,
+            fecha_firma: new Date().toISOString(),
+            firma_path: firmaStoragePath
+          })
+          .eq('id', reciboId);
+
+        if (errDb) throw errDb;
+
+        // Sincronizar memoria local
+        const rLocal = todosLosRecibos.find(r => String(r.id) === String(reciboId));
+        if (rLocal) {
+          rLocal.firmado = true;
+          rLocal.fecha_firma = new Date().toISOString();
+        }
+
+        renderizarTablaRecibos();
+        document.getElementById('modalFirma').style.display = 'none';
+
+        ejecutarAccionFinal();
+
+      } catch (err) {
+        console.error("Error al registrar firma:", err);
+        alert("Error al registrar la firma: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Confirmar y Continuar";
+      }
+    }
+
+    function ejecutarAccionFinal() {
+      if (!operacionPendiente) return;
+      const { tipo, pdfPath, periodo } = operacionPendiente;
+
+      if (tipo === 'ver') {
+        verRecibo(pdfPath);
+      } else if (tipo === 'descargar') {
+        descargarRecibo(pdfPath, periodo);
+      }
+      operacionPendiente = null;
+    }
+
+    // 8. Previsualizar archivo PDF
+    async function verRecibo(pdfPath) {
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from('recibos')
+          .createSignedUrl(pdfPath, 3600);
+
+        if (error) throw error;
+        if (data && data.signedUrl) {
+          window.open(data.signedUrl, '_blank');
+        }
+      } catch (err) {
+        alert("No se pudo previsualizar el recibo: " + err.message);
+      }
+    }
+
+    // 9. Descargar PDF
+    async function descargarRecibo(pdfPath, periodo) {
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from('recibos')
+          .download(pdfPath);
+
+        if (error) throw error;
+
+        const blobUrl = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Recibo_${periodo}_${sesionActual.dni}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+      } catch (err) {
+        alert("Error al descargar el archivo: " + err.message);
+      }
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('operario_sesion');
+      window.location.href = 'loguer.html';
+    }
+  </script>
 </body>
 </html>
