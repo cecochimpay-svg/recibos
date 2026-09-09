@@ -3,10 +3,9 @@
 <head>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co;" />
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acceso Operarios · Recibos de Sueldo</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-  <!-- Supabase CDN para compatibilidad tanto en Electron como en Web/GitHub Pages -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Acceso Operarios · Recibos de Sueldo · CECO S.A.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -19,7 +18,7 @@
       --color-text: #1B231D;
       --color-text-secondary: #6B7280;
       --color-border: #E5E7EB;
-      --radius-card: 20px;
+      --radius-card: 22px;
       --radius-input: 12px;
     }
 
@@ -35,6 +34,25 @@
       justify-content: center;
       background-image: repeating-linear-gradient(100deg, rgba(30, 107, 76, 0.035) 0px, rgba(30, 107, 76, 0.035) 1.5px, transparent 1.5px, transparent 38px);
     }
+    .btn-whatsapp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #25D366;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: var(--radius-input);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
+    }
+    .btn-whatsapp:hover {
+      background: #1EBE5D;
+      transform: translateY(-1px);
+    }
 
     .login-container {
       width: 100%;
@@ -46,21 +64,29 @@
       background: var(--color-surface);
       border: 1.5px solid var(--color-border);
       border-radius: var(--radius-card);
-      padding: 38px 32px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
+      padding: 34px 28px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.06);
       text-align: center;
     }
 
+    .marca-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
     .logo-img {
-      max-width: 130px;
-      height: auto;
-      margin-bottom: 18px;
+      width: 44px;
+      height: 44px;
       object-fit: contain;
+      border-radius: 8px;
     }
 
     .login-title {
       font-family: 'Montserrat', sans-serif;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
       color: var(--color-plant-dark);
       margin: 0 0 6px;
@@ -68,14 +94,28 @@
     }
 
     .login-subtitle {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--color-text-secondary);
-      margin: 0 0 26px;
+      margin: 0 0 22px;
+      line-height: 1.45;
+    }
+
+    .badge-empleado {
+      background: var(--color-plant-soft);
+      border: 1.2px solid var(--color-plant);
+      color: var(--color-plant-dark);
+      padding: 8px 12px;
+      border-radius: var(--radius-input);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: none;
+      text-align: left;
     }
 
     .form-group {
       text-align: left;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .form-group label {
@@ -93,7 +133,7 @@
       padding: 12px 16px;
       font-size: 15px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       border-radius: var(--radius-input);
       border: 1.5px solid var(--color-border);
       background: #FAFAF9;
@@ -107,6 +147,12 @@
       border-color: var(--color-plant);
       background: #FFFFFF;
       box-shadow: 0 0 0 4px var(--color-plant-soft);
+    }
+
+    .form-input[readonly] {
+      background: #F1F5F9;
+      color: #64748B;
+      cursor: not-allowed;
     }
 
     .btn-login {
@@ -143,6 +189,17 @@
       transform: none;
     }
 
+    .lnk-recuperar {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--color-plant);
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .lnk-recuperar:hover { text-decoration: underline; }
+
     .alert-box {
       margin-top: 16px;
       padding: 10px 14px;
@@ -151,11 +208,39 @@
       font-weight: 600;
       display: none;
       text-align: center;
+      line-height: 1.4;
     }
     .alert-error {
       background: #FEF2F2;
       border: 1px solid #FCA5A5;
       color: #991B1B;
+    }
+
+    /* Modal Soporte / Olvido Clave */
+    .modal-soporte-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+      padding: 16px;
+    }
+
+    .modal-soporte-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 380px;
+      padding: 26px 22px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1.5px solid var(--color-border);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.18);
     }
   </style>
 </head>
@@ -163,12 +248,27 @@
 
   <div class="login-container">
     <div class="login-card">
-      <img src="logo.png" alt="Logo Empresa" class="logo-img" onerror="this.style.display='none'">
-      <h2 class="login-title">Portal de Recibos</h2>
-      <p class="login-subtitle">Ingresá tu DNI para consultar tus recibos de sueldo.</p>
+      
+      <div class="marca-header">
+        <img src="logo.png" alt="CECO S.A." class="logo-img" onerror="this.src='../logo.png'; this.onerror=null;">
+        <div style="text-align: left;">
+          <div style="font-weight: 800; font-size: 16px; color: var(--color-plant-dark); font-family: 'Montserrat';">CECO S.A.</div>
+          <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 700;">Portal Oficial de Recibos</div>
+        </div>
+      </div>
 
-      <form id="formLogin" onsubmit="validarIngreso(event)">
-        <div class="form-group">
+      <h2 class="login-title" id="lblTituloLogin">Portal de Recibos</h2>
+      <p class="login-subtitle" id="lblSubtituloLogin">Ingresá tu número de DNI para consultar tus recibos de sueldo digitales.</p>
+
+      <div class="badge-empleado" id="boxDatosEmpleado">
+        <div>👤 <b id="txtEmpleadoNombre">—</b></div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">Legajo: <span id="txtEmpleadoLegajo">—</span></div>
+      </div>
+
+      <form id="formLogin" onsubmit="procesarFormulario(event)">
+        
+        <!-- Campo 1: DNI -->
+        <div class="form-group" id="grpDni">
           <label for="inputDni">Documento Nacional de Identidad</label>
           <input 
             type="tel" 
@@ -181,82 +281,170 @@
           />
         </div>
 
-        <button type="submit" class="btn-login" id="btnLogin">INGRESAR</button>
+        <!-- Campo 2: Contraseña (Aparece si ya tiene clave) -->
+        <div class="form-group" id="grpPassword" style="display: none;">
+          <label for="inputPassword">Contraseña de Acceso</label>
+          <input 
+            type="password" 
+            id="inputPassword" 
+            class="form-input" 
+            placeholder="••••••••" 
+            autocomplete="current-password"
+          />
+        </div>
+
+        <!-- Campo 3: Crear Contraseña (Aparece en primer acceso) -->
+        <div class="form-group" id="grpCrearPass" style="display: none;">
+          <label for="inputNuevaPass">Generar Clave de Acceso</label>
+          <input 
+            type="password" 
+            id="inputNuevaPass" 
+            class="form-input" 
+            placeholder="Mínimo 4 caracteres" 
+            minlength="4"
+          />
+        </div>
+
+        <!-- Campo 4: Confirmar Contraseña (Primer acceso) -->
+        <div class="form-group" id="grpRepetirPass" style="display: none;">
+          <label for="inputRepetirPass">Repetir Nueva Clave</label>
+          <input 
+            type="password" 
+            id="inputRepetirPass" 
+            class="form-input" 
+            placeholder="Repetí tu clave" 
+            minlength="4"
+          />
+        </div>
+
+        <button type="submit" class="btn-login" id="btnLogin">VERIFICAR DNI</button>
       </form>
+
+      <div id="boxOpcionesSecundarias" style="display: none;">
+        <a class="lnk-recuperar" onclick="abrirModalSoporte()">¿Olvidaste tu contraseña?</a>
+        <br>
+        <button type="button" onclick="reiniciarLogin()" style="background: none; border: none; font-size: 11px; font-weight: 700; color: #94A3B8; cursor: pointer; margin-top: 10px;">
+          Ingresar con otro DNI
+        </button>
+      </div>
 
       <div id="alertaMsg" class="alert-box alert-error"></div>
     </div>
   </div>
 
-  <script>
-        // 1. Bloquear atajos de teclado
-  window.addEventListener('keydown', function(e) {
-    var isCtrlOrCmd = e.ctrlKey || e.metaKey;
-    var key = e.key ? e.key.toLowerCase() : '';
-    
-    // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
-    if (e.key === 'F12' || 
-       (isCtrlOrCmd && e.shiftKey && (key === 'i' || key === 'j' || key === 'c')) ||
-       (isCtrlOrCmd && key === 'u')) {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    }
-  }, true);
+  <!-- Modal Soporte / Recuperación de Clave -->
+  <!-- Modal Soporte / Recuperación de Clave con WhatsApp -->
+  <div class="modal-soporte-overlay" id="modalSoporte">
+    <div class="modal-soporte-card">
+      <div style="font-size: 38px;">💬</div>
+      <h3 style="margin: 0; font-family: 'Montserrat'; font-size: 17px; color: var(--color-plant-dark);">
+        Recuperar Contraseña
+      </h3>
+      <p style="font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5; margin: 0;">
+        Comunicate directamente con la administración de <b>CECO S.A.</b> por WhatsApp para solicitar el blanqueo o dictado de tu clave de acceso.
+      </p>
 
-  // 2. Bloquear Clic Derecho (Menú Contextual)
-  window.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-  }, true);
+      <!-- Botones de WhatsApp Directos -->
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 6px 0;">
+        <a id="btnWpp1" class="btn-whatsapp" href="#" target="_blank">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.24-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.44 1.03 2.61c.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.29z"/></svg>
+          WhatsApp: (298) 438-2634
+        </a>
 
-  // 3. Detección Inteligente de DevTools Abiertas
-  function detectDevTools() {
-    var widthThreshold = window.outerWidth - window.innerWidth > 160;
-    var heightThreshold = window.outerHeight - window.innerHeight > 160;
-    
-    // Si la consola está acoplada al costado o abajo
-    if (widthThreshold || heightThreshold) {
-      bloquearPantalla();
-    }
-  }
-
-  // 4. Trampa Anti-Debugging (Pausa la ejecución si la consola se abre)
-  setInterval(function() {
-    var startTime = performance.now();
-    debugger;
-    var endTime = performance.now();
-    if (endTime - startTime > 100) {
-      bloquearPantalla();
-    }
-    detectDevTools();
-  }, 500);
-
-  function bloquearPantalla() {
-    document.body.innerHTML = `
-      <div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#F4F6F3; font-family:sans-serif;">
-        <div style="text-align:center; padding:30px; background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-          <h2 style="color:#991B1B; margin-bottom:10px;">Acceso restringido</h2>
-          <p style="color:#4B5563;">Por razones de seguridad, cerrá las herramientas de desarrollo para continuar.</p>
-        </div>
+        <a id="btnWpp2" class="btn-whatsapp" href="#" target="_blank">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.24-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.44 1.03 2.61c.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.29z"/></svg>
+          WhatsApp: (299) 465-4507
+        </a>
       </div>
-    `;
-  }
+
+      <div style="background: #F8FAFC; border: 1px solid var(--color-border); border-radius: var(--radius-input); padding: 10px; font-size: 11px; text-align: left; color: #64748B;">
+        🏢 <b>Establecimiento Chimpay:</b> Ruta Nac. 22 Km. 1050<br>
+        💼 <b>Horario de Atención:</b> Lunes a Viernes de 08:00 a 17:00 hs.
+      </div>
+
+      <button type="button" class="btn-login" onclick="cerrarModalSoporte()" style="padding: 10px; font-size: 12px; background: #64748B;">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 1. Bloquear atajos de teclado y F12
+    window.addEventListener('keydown', function(e) {
+      var isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      var key = e.key ? e.key.toLowerCase() : '';
+      if (e.key === 'F12' || 
+         (isCtrlOrCmd && e.shiftKey && (key === 'i' || key === 'j' || key === 'c')) ||
+         (isCtrlOrCmd && key === 'u')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
+
+    // 2. Bloquear Clic Derecho
+    window.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    }, true);
+
+    // 3. Detección de DevTools y Anti-Debugging
+    function detectDevTools() {
+      var widthThreshold = window.outerWidth - window.innerWidth > 160;
+      var heightThreshold = window.outerHeight - window.innerHeight > 160;
+      if (widthThreshold || heightThreshold) bloquearPantalla();
+    }
+
+    setInterval(function() {
+      var startTime = performance.now();
+      debugger;
+      var endTime = performance.now();
+      if (endTime - startTime > 100) bloquearPantalla();
+      detectDevTools();
+    }, 500);
+
+    function bloquearPantalla() {
+      document.body.innerHTML = `
+        <div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#F4F6F3; font-family:sans-serif;">
+          <div style="text-align:center; padding:30px; background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <h2 style="color:#991B1B; margin-bottom:10px;">Acceso restringido</h2>
+            <p style="color:#4B5563;">Por razones de seguridad, cerrá las herramientas de desarrollo para continuar.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Configuración de Supabase
     const SUPABASE_URL = 'https://zsgqlmfzidazdtpgmuna.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzZ3FsbWZ6aWRhemR0cGdtdW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTY3NDIsImV4cCI6MjA5Nzc5Mjc0Mn0.Y9dDHLdQGIOcVS3JaYnbUHWlwul4uiEkkb7udeoF-b0';
 
-    // ESTO LO MODIFIQUE: Se renombra la variable a supabaseClient para no colisionar con la librería global
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function validarIngreso(e) {
-      e.preventDefault();
-      const dniVal = document.getElementById('inputDni').value.trim().replace(/\D/g, '');
-      const btn = document.getElementById('btnLogin');
-      const alerta = document.getElementById('alertaMsg');
+    // Estados posibles del login: 'VERIFICAR_DNI' | 'LOGIN_PASSWORD' | 'CREAR_PASSWORD'
+    let estadoActual = 'VERIFICAR_DNI';
+    let operarioActivo = null;
+    let usuarioGuardado = null;
 
+    async function procesarFormulario(e) {
+      e.preventDefault();
+      const alerta = document.getElementById('alertaMsg');
       alerta.style.display = 'none';
 
+      if (estadoActual === 'VERIFICAR_DNI') {
+        await verificarDni();
+      } else if (estadoActual === 'LOGIN_PASSWORD') {
+        await ingresarConPassword();
+      } else if (estadoActual === 'CREAR_PASSWORD') {
+        await registrarPassword();
+      }
+    }
+
+    // PASO 1: Verificar si el DNI existe en nómina de recibos
+    async function verificarDni() {
+      const dniVal = document.getElementById('inputDni').value.trim().replace(/\D/g, '');
+      const btn = document.getElementById('btnLogin');
+
       if (!dniVal || dniVal.length < 7) {
-        mostrarAlerta("Ingresá un número de DNI válido.");
+        mostrarAlerta("Por favor ingresá un número de DNI válido.");
         return;
       }
 
@@ -264,36 +452,199 @@
       btn.innerText = "VERIFICANDO...";
 
       try {
-        const { data, error } = await supabaseClient
+        // 1. Verificar existencia en la tabla 'recibos'
+        const { data: dataRecibos, error: errRecibos } = await supabaseClient
           .from('recibos')
           .select('dni, empleado, legajo')
           .eq('dni', parseInt(dniVal, 10))
           .limit(1);
 
-        if (error) throw error;
+        if (errRecibos) throw errRecibos;
 
-        if (!data || data.length === 0) {
+        if (!dataRecibos || dataRecibos.length === 0) {
           mostrarAlerta("DNI no registrado o sin recibos disponibles actualmente.");
           btn.disabled = false;
-          btn.innerText = "INGRESAR";
+          btn.innerText = "VERIFICAR DNI";
           return;
         }
 
-        const sesion = {
-          dni: data[0].dni,
-          empleado: data[0].empleado || 'Operario',
-          legajo: data[0].legajo || '—'
-        };
+        operarioActivo = dataRecibos[0];
 
-        localStorage.setItem('operario_sesion', JSON.stringify(sesion));
-        window.location.href = 'panel.html';
+        // 2. Consultar tabla de usuarios y claves
+        const { data: dataUsuario, error: errUsuario } = await supabaseClient
+          .from('usuarios_operarios')
+          .select('*')
+          .eq('dni', parseInt(dniVal, 10))
+          .maybeSingle();
+
+        if (errUsuario) throw errUsuario;
+
+        usuarioGuardado = dataUsuario;
+
+        // Mostrar encabezado del empleado
+        document.getElementById('inputDni').readOnly = true;
+        document.getElementById('txtEmpleadoNombre').innerText = operarioActivo.empleado || 'Operario';
+        document.getElementById('txtEmpleadoLegajo').innerText = operarioActivo.legajo || '—';
+        document.getElementById('boxDatosEmpleado').style.display = 'block';
+
+        // Evaluar si ya tiene clave o es primer acceso
+        if (usuarioGuardado && usuarioGuardado.password) {
+          // YA TIENE CLAVE
+          estadoActual = 'LOGIN_PASSWORD';
+          document.getElementById('lblTituloLogin').innerText = "Ingreso con Clave";
+          document.getElementById('lblSubtituloLogin').innerText = "Ingresá tu contraseña de acceso para continuar.";
+          document.getElementById('grpPassword').style.display = 'block';
+          document.getElementById('boxOpcionesSecundarias').style.display = 'block';
+          document.getElementById('inputPassword').required = true;
+          document.getElementById('inputPassword').focus();
+
+          btn.disabled = false;
+          btn.innerText = "INGRESAR";
+        } else {
+          // PRIMER ACCESO: CREAR CLAVE
+          estadoActual = 'CREAR_PASSWORD';
+          document.getElementById('lblTituloLogin').innerText = "Primer Acceso";
+          document.getElementById('lblSubtituloLogin').innerText = "Generá una clave personal para ingresar a tus recibos a partir de ahora.";
+          document.getElementById('grpCrearPass').style.display = 'block';
+          document.getElementById('grpRepetirPass').style.display = 'block';
+          document.getElementById('inputNuevaPass').required = true;
+          document.getElementById('inputRepetirPass').required = true;
+          document.getElementById('inputNuevaPass').focus();
+
+          btn.disabled = false;
+          btn.innerText = "GUARDAR CLAVE Y ACCEDER";
+        }
 
       } catch (err) {
-        console.error("Error validando DNI:", err);
-        mostrarAlerta("Error al conectar con el servidor. Reintentá.");
+        console.error("Error al verificar:", err);
+        mostrarAlerta("Error al conectar con el servidor: " + (err.message || err));
+        btn.disabled = false;
+        btn.innerText = "VERIFICAR DNI";
+      }
+    }
+
+    // PASO 2A: Validar contraseña existente
+    async function ingresarConPassword() {
+      const passIngresada = document.getElementById('inputPassword').value.trim();
+      const btn = document.getElementById('btnLogin');
+
+      if (!passIngresada) {
+        mostrarAlerta("Por favor ingresá tu contraseña.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "INICIANDO...";
+
+      if (passIngresada !== usuarioGuardado.password) {
+        mostrarAlerta("La contraseña ingresada es incorrecta. Si no la recordás, comunicate con la empresa.");
         btn.disabled = false;
         btn.innerText = "INGRESAR";
+        return;
       }
+
+      // Clave correcta: Guardar sesión y redirigir
+      completarInicioSesion();
+    }
+
+    // PASO 2B: Registrar nueva clave en el primer acceso
+    async function registrarPassword() {
+      const p1 = document.getElementById('inputNuevaPass').value.trim();
+      const p2 = document.getElementById('inputRepetirPass').value.trim();
+      const btn = document.getElementById('btnLogin');
+
+      if (p1.length < 4) {
+        mostrarAlerta("La contraseña debe tener al menos 4 caracteres.");
+        return;
+      }
+
+      if (p1 !== p2) {
+        mostrarAlerta("Las contraseñas no coinciden. Verificalas.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "GUARDANDO CLAVE...";
+
+      try {
+        const payload = {
+          dni: parseInt(operarioActivo.dni, 10),
+          password: p1,
+          primer_acceso: false,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabaseClient
+          .from('usuarios_operarios')
+          .upsert([payload], { onConflict: 'dni' });
+
+        if (error) throw error;
+
+        completarInicioSesion();
+
+      } catch (err) {
+        console.error("Error al guardar contraseña:", err);
+        mostrarAlerta("Error al registrar la clave: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "GUARDAR CLAVE Y ACCEDER";
+      }
+    }
+
+    function completarInicioSesion() {
+      const sesion = {
+        dni: operarioActivo.dni,
+        empleado: operarioActivo.empleado || 'Operario',
+        legajo: operarioActivo.legajo || '—'
+      };
+
+      localStorage.setItem('operario_sesion', JSON.stringify(sesion));
+      window.location.href = 'panel.html';
+    }
+
+    function reiniciarLogin() {
+      estadoActual = 'VERIFICAR_DNI';
+      operarioActivo = null;
+      usuarioGuardado = null;
+
+      document.getElementById('inputDni').readOnly = false;
+      document.getElementById('inputDni').value = '';
+      document.getElementById('inputPassword').value = '';
+      document.getElementById('inputNuevaPass').value = '';
+      document.getElementById('inputRepetirPass').value = '';
+
+      document.getElementById('grpPassword').style.display = 'none';
+      document.getElementById('grpCrearPass').style.display = 'none';
+      document.getElementById('grpRepetirPass').style.display = 'none';
+      document.getElementById('boxDatosEmpleado').style.display = 'none';
+      document.getElementById('boxOpcionesSecundarias').style.display = 'none';
+      document.getElementById('alertaMsg').style.display = 'none';
+
+      document.getElementById('lblTituloLogin').innerText = "Portal de Recibos";
+      document.getElementById('lblSubtituloLogin').innerText = "Ingresá tu número de DNI para consultar tus recibos de sueldo digitales.";
+      
+      const btn = document.getElementById('btnLogin');
+      btn.disabled = false;
+      btn.innerText = "VERIFICAR DNI";
+
+      document.getElementById('inputDni').focus();
+    }
+
+    function abrirModalSoporte() {
+      const dniVal = document.getElementById('inputDni').value.trim() || (operarioActivo ? operarioActivo.dni : '');
+      const nombreVal = operarioActivo && operarioActivo.empleado ? operarioActivo.empleado : '';
+
+      const mensaje = encodeURIComponent(
+        `Hola, me comunico desde el Portal de Recibos de CECO S.A. Necesito recuperar o consultar mi contraseña de acceso. Mi DNI es: ${dniVal}${nombreVal ? ' (' + nombreVal + ')' : ''}.`
+      );
+
+      document.getElementById('btnWpp1').href = `https://wa.me/5492984382634?text=${mensaje}`;
+      document.getElementById('btnWpp2').href = `https://wa.me/5492994654507?text=${mensaje}`;
+
+      document.getElementById('modalSoporte').style.display = 'flex';
+    }
+
+    function cerrarModalSoporte() {
+      document.getElementById('modalSoporte').style.display = 'none';
     }
 
     function mostrarAlerta(msg) {
